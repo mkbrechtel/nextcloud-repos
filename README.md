@@ -56,3 +56,7 @@ Create a Git-annex special remote that uses the existing Nextclouds Oauth authen
 For the early development our primary environment target is the latest Nextcloud stable release packaged into a Podman container. The source code is mounted into the container to be able to live edit the app code and see the results directly.
 
 The special remote is developed inside the ./git-annex-special-remote folder in Go?!…
+
+## Issue Reporting
+
+Issues are tracked as markdown files. See [issues/README.md](./issues/README.md) for details.
