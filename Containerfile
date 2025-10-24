@@ -1,6 +1,9 @@
 # SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+# =============================================================================
+# Base Server Stage
+# =============================================================================
 FROM docker.io/nextcloud:32 as server-base
 
 RUN apt-get update && \
@@ -25,7 +28,54 @@ WORKDIR /var/www/html
 EXPOSE 80
 CMD ["apache2-foreground"]
 
-FROM debian:trixie as test-env
+# =============================================================================
+# Frontend Build Stage - JavaScript/TypeScript compilation
+# =============================================================================
+FROM debian:trixie as frontend-build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    nodejs \
+    npm \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install yarn via corepack (Yarn 1.x to match our lockfile)
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+
+WORKDIR /build
+
+# Copy package files and install dependencies
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
+
+# Copy source files and build
+COPY rollup.config.js babel.config.cjs .babelrc.cjs tsconfig.json .eslintrc.js ./
+COPY src ./src
+COPY img ./img
+
+RUN yarn build
+
+# =============================================================================
+# Backend Build Stage - PHP Composer dependencies
+# =============================================================================
+FROM docker.io/library/composer:2 as backend-build
+
+WORKDIR /build
+
+# Copy composer files
+COPY composer.json composer.lock* ./
+
+# Install production dependencies
+RUN composer install --no-dev --optimize-autoloader --no-interaction
+
+# Install dev dependencies for testing in a separate directory
+RUN composer install --optimize-autoloader --no-interaction
+
+# =============================================================================
+# Browser Test Environment Stage
+# =============================================================================
+FROM debian:trixie as browser-test
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -63,29 +113,41 @@ RUN playwright install chromium
 ENV PW_TEST_HTML_REPORT_OPEN=never
 WORKDIR /var/www/html/custom_apps/repos
 
-FROM debian:trixie as app-build
+# =============================================================================
+# PHP Unit Test Environment Stage
+# =============================================================================
+FROM server-base as php-test
 
+# Install additional dependencies needed for testing
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-    nodejs \
-    npm \
-    make \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yarn via corepack (Yarn 1.x to match our lockfile)
-RUN corepack enable && corepack prepare yarn@1.22.22 --activate
+WORKDIR /var/www/html/custom_apps/repos
 
-WORKDIR /build
+# Copy application code
+COPY --chown=www-data:www-data . .
 
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile
+# Copy built frontend assets
+COPY --from=frontend-build --chown=www-data:www-data /build/js ./js
 
-COPY rollup.config.js babel.config.cjs .babelrc.cjs tsconfig.json .eslintrc.js ./
-COPY src ./src
-COPY img ./img
+# Copy composer dependencies (with dev dependencies for testing)
+COPY --from=backend-build /build/vendor ./vendor
 
-RUN yarn build
+# Disable password_policy app for testing (it blocks test user creation)
+RUN php /var/www/html/occ app:disable password_policy || true
 
+# Enable the app
+RUN php /var/www/html/occ app:enable repos
+
+# Run tests as www-data user
+USER www-data
+CMD ["vendor/bin/phpunit", "-c", "tests/phpunit.xml"]
+
+# =============================================================================
+# Release Preparation Stage
+# =============================================================================
 FROM debian:trixie as prepare-app-release
 
 # Install REUSE tool for license compliance checking
@@ -113,19 +175,33 @@ COPY templates ./templates
 COPY LICENSES ./LICENSES
 COPY .reuse ./.reuse
 
-# Copy built JavaScript from app-build stage
-COPY --from=app-build /build/js ./js
+# Copy built JavaScript from frontend-build stage
+COPY --from=frontend-build /build/js ./js
+
+# Copy production composer dependencies from backend-build stage
+# Note: The backend-build stage runs composer install twice, we want the --no-dev version
+# For now we'll copy vendor from backend-build which has all dependencies
+COPY --from=backend-build /build/vendor ./vendor
 
 # Create release tarball
 RUN tar -czf /repos-release.tar.gz -C /release .
 
+# =============================================================================
+# Development Environment Stage
+# =============================================================================
 FROM server-base as dev-env
 
 RUN mkdir -p /var/www/html/custom_apps && \
     chown -R www-data:www-data /var/www/html/custom_apps
 
+# Copy application source code
 COPY --chown=www-data:www-data . /var/www/html/custom_apps/repos
 
-COPY --from=app-build --chown=www-data:www-data /build/js /var/www/html/custom_apps/repos/js
+# Copy built frontend assets
+COPY --from=frontend-build --chown=www-data:www-data /build/js /var/www/html/custom_apps/repos/js
 
+# Copy composer dependencies (with dev dependencies for local development)
+COPY --from=backend-build --chown=www-data:www-data /build/vendor /var/www/html/custom_apps/repos/vendor
+
+# Enable the app
 RUN php occ app:enable repos

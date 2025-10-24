@@ -5,8 +5,8 @@
 set -e
 
 CONTAINER_NAME="nextcloud-repos-dev"
-TEST_IMAGE_NAME="nextcloud-repos:test"
-TEST_CONTAINER_NAME="nextcloud-repos-test"
+TEST_IMAGE_NAME="nextcloud-repos:browser-test"
+TEST_CONTAINER_NAME="nextcloud-repos-browser-test"
 
 # Check if dev server is running
 if ! podman ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
@@ -15,10 +15,10 @@ if ! podman ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
     exit 1
 fi
 
-echo "Building test image..."
-podman build --target test-env -t "$TEST_IMAGE_NAME" -f Containerfile .
+echo "Building browser test image..."
+podman build --target browser-test -t "$TEST_IMAGE_NAME" -f Containerfile .
 
-echo "Running tests..."
+echo "Running browser tests..."
 podman run --rm \
     --name "$TEST_CONTAINER_NAME" \
     --network container:$CONTAINER_NAME \
@@ -27,6 +27,6 @@ podman run --rm \
     sh -c "cd tests/browser && pytest -v"
 
 echo ""
-echo "✓ Tests completed!"
+echo "✓ Browser tests completed!"
 echo "  Screenshots: tests/browser/screenshots/"
 echo "  HTML output: tests/browser/html_output/"

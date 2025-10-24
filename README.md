@@ -115,18 +115,37 @@ The source code is mounted into the container, so any changes you make to the co
 
 ### Running Tests
 
-The project includes browser-based integration tests using Playwright:
+The project includes two types of tests:
+
+#### Browser Tests
+
+Browser-based integration tests using Playwright (requires dev server to be running):
 
 ```bash
-# Run all tests (requires dev server to be running)
-./run-tests.sh
+# Run browser tests
+./run-browser-tests.sh
 ```
 
-Tests will automatically:
+Browser tests will automatically:
 - Take screenshots (saved to `tests/browser/screenshots/`)
 - Save HTML output (saved to `tests/browser/html_output/`)
 
 For more details, see [tests/browser/README.md](tests/browser/README.md).
+
+#### PHP Unit Tests
+
+PHP integration tests using PHPUnit (runs in isolated container):
+
+```bash
+# Run PHP unit tests
+./run-php-tests.sh
+```
+
+Tests are located in `tests/Integration/` and cover:
+- Repository creation and management
+- Group permissions
+- File access and mounting
+- CLI commands
 
 The special remote is developed inside the ./git-annex-special-remote folder in Go?!…
 
