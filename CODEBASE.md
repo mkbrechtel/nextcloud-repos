@@ -916,95 +916,30 @@ Repair step that fixes incorrect quota values from earlier versions.
 
 ## 17. Build & CI/CD
 
-### Location: `.github/workflows/`, root config files
+### Status: ⚠️ PARTIALLY REMOVED
 
-**Purpose:** Automated testing, linting, building, and deployment.
+**GitHub Actions workflows removed** - All 23 GitHub Actions workflow files have been deleted. These will need to be recreated from scratch for the Repositories app.
 
-### 17.1 GitHub Actions Workflows: `.github/workflows/`
+**What was removed:**
+- All `.github/workflows/*.yml` files (23 workflows):
+  - 6 PHPUnit test workflows (sqlite, pgsql, mysql, oci, sharding, s3)
+  - 2 frontend test workflows (node, cypress)
+  - 6 code quality workflows (php-cs, eslint, stylelint, psalm, reuse, info-xml)
+  - 1 OpenAPI workflow
+  - 1 App Store publishing workflow
+  - 7 automation workflows (dependabot, npm-audit, pr-feedback, etc.)
 
-#### Unit Testing:
-- **`phpunit-sqlite.yml`** - Tests with SQLite
-- **`phpunit-pgsql.yml`** - Tests with PostgreSQL
-- **`phpunit-mysql.yml`** - Tests with MySQL
-- **`phpunit-oci.yml`** - Tests with Oracle
-- **`phpunit-mysql-sharding.yml`** - Tests with database sharding
-- **`phpunit-sqlite-s3.yml`** - Tests with S3 storage backend
+**What remains:**
+- Build configuration files (still present):
+  - `webpack.js` - Frontend bundling
+  - `tsconfig.json` - TypeScript configuration
+  - `babel.config.js` / `.babelrc.js` - Transpiler config
+  - `.eslintrc.js` - Linting rules
+  - `.php-cs-fixer.dist.php` - PHP code style
+  - `Makefile` - Build automation scripts
+  - `krankerl.toml` - App packaging config
 
-**Total:** 6 database configurations tested in CI
-
-#### Frontend Testing:
-- **`node.yml`** - Node.js tests
-- **`cypress.yml`** - Cypress E2E tests
-
-#### Code Quality:
-- **`lint-php.yml`** - PHP syntax validation (`php -l`)
-- **`lint-php-cs.yml`** - PHP Code Sniffer (php-cs-fixer)
-- **`lint-eslint.yml`** - JavaScript/TypeScript linting
-- **`lint-stylelint.yml`** - CSS/SCSS linting
-- **`lint-info-xml.yml`** - XML validation
-- **`psalm.yml`** - Static analysis (Psalm)
-- **`reuse.yml`** - License compliance (REUSE)
-
-#### API & Documentation:
-- **`openapi.yml`** - OpenAPI spec generation/validation
-
-#### Deployment:
-- **`appstore-build-publish.yml`** - Build and publish to Nextcloud App Store
-
-#### Automation:
-- **`update-nextcloud-ocp.yml`** - Auto-update Nextcloud OCP dependency
-- **`pr-feedback.yml`** - PR feedback bot
-- **`npm-audit-fix.yml`** - Security audit auto-fix
-- **`fixup.yml`** - Auto-fixup commits
-- **`dependabot.yml`** - Dependency updates (in `.github/`)
-
-**Total:** 25+ CI/CD workflows
-
-### 17.2 Build Configuration:
-
-##### `webpack.js`
-**Lines:** ~100+ lines
-**Significance:** 🟡 Important - Build orchestration
-
-Webpack configuration for bundling frontend:
-- Entry points: `init.ts`, `settings/index.tsx`, `files.js`, etc.
-- Loaders: TypeScript, Babel, SCSS
-- Output: `js/` directory
-- Uses `@nextcloud/webpack-vue-config`
-
-##### `tsconfig.json`
-TypeScript compiler configuration:
-- Target: ES2020
-- JSX: React
-- Strict type checking enabled
-
-##### `babel.config.js` / `.babelrc.js`
-Babel transpiler configuration for older browser support.
-
-##### `.eslintrc.js`
-ESLint configuration:
-- Extends `@nextcloud/eslint-config`
-- TypeScript support
-- React rules
-
-##### `.php-cs-fixer.dist.php`
-PHP-CS-Fixer configuration:
-- PSR-12 coding standard
-- Custom Nextcloud rules
-
-##### `Makefile`
-**Lines:** ~150+ lines
-**Significance:** 🟡 Important - Build automation
-
-Build tasks:
-- `make build` - Build frontend
-- `make dev` - Development build with watch
-- `make release` - Create app release package
-- `make appstore` - Package for app store
-- `make test` - Run tests
-
-##### `krankerl.toml`
-Nextcloud app packaging configuration (used by krankerl tool).
+**Current state:** Build tools remain, but all CI/CD automation removed. Will need new workflows for the Repositories app.
 
 ---
 
