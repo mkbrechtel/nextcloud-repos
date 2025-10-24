@@ -495,89 +495,29 @@ Adds custom WebDAV properties:
 
 ## 9. Admin Settings UI
 
-### Location: `lib/Settings/`, `src/settings/`
+### Status: ❌ REMOVED
 
-**Purpose:** Admin panel for managing team folders.
+**Removed in refactoring** - The entire admin settings UI has been deleted. This includes both backend and frontend components. A complete redesign will be needed for the Repositories app.
 
-### Backend: `lib/Settings/`
+**What was removed:**
 
-##### `lib/Settings/Admin.php`
-**Lines:** ~100+ lines
-**Significance:** 🟡 Important - Settings integration
+### Backend (lib/Settings/):
+- `lib/Settings/Admin.php` - Settings provider and React app loader
+- `lib/Settings/Section.php` - Admin section definition
 
-Settings provider implementing `IDelegatedSettings`:
-- Provides initial state to React app
-- Checks app dependencies
-- Loads React bundle
+### Frontend (src/settings/):
+- `src/settings/App.tsx` - Main React admin component (~800 lines)
+- `src/settings/Api.ts` - TypeScript API client (~400 lines)
+- `src/settings/FolderGroups.tsx` - Group management component
+- `src/settings/QuotaSelect.tsx` - Quota selector dropdown
+- `src/settings/AdminGroupSelect.tsx` - Admin group selector
+- `src/settings/SubAdminGroupSelect.tsx` - Subadmin group selector
+- `src/settings/SubmitInput.tsx` - Input with submit button
+- `src/settings/SortArrow.tsx` - Table sort indicator
+- `src/settings/index.tsx` - React app entry point
+- All related SCSS files (App.scss, EditSelect.scss, FolderGroups.scss)
 
-##### `lib/Settings/Section.php`
-Defines admin settings section (where settings appear in admin panel).
-
-### Frontend: `src/settings/`
-
-##### `src/settings/App.tsx` (Main React Component)
-**Lines:** ~800+ lines
-**Significance:** 🔴 Critical - Primary admin interface
-
-Main React component for folder management UI. Features:
-- **Folder List:** Paginated table of all folders
-- **Create Folder:** Dialog for creating new folders
-- **Delete Folder:** Confirmation and deletion
-- **Group Assignment:** Multi-select for adding groups/circles
-- **Permission Editor:** Checkboxes for read/write/delete/share
-- **Quota Selector:** Dropdown for storage limits
-- **ACL Management:** Toggle ACL, assign ACL managers
-- **Delegated Admins:** Select admin/subadmin groups
-- **Sorting/Filtering:** Sort by name, groups, quota
-- **Mount Point Renaming:** Inline rename functionality
-
-**State Management:**
-- Uses React hooks (useState, useEffect)
-- Manages folder list, groups, quotas, loading states
-- Handles API calls via Api.ts
-
-##### `src/settings/Api.ts` (API Client)
-**Lines:** ~400+ lines
-**Significance:** 🟡 Important - Frontend-backend bridge
-
-TypeScript API client wrapping axios:
-- **Folder Operations:** listFolders, createFolder, deleteFolder, renameFolder
-- **Group Operations:** addGroup, removeGroup, setPermissions
-- **Quota Operations:** setQuota
-- **ACL Operations:** setACL, aclMappingSearch
-- **Delegation:** getAdminGroups, setAdminGroups, etc.
-
-All methods return typed responses using OpenAPI-generated types.
-
-##### `src/settings/FolderGroups.tsx`
-**Lines:** ~300+ lines
-**Significance:** 🟡 Important - Group management UI
-
-Component for managing folder group assignments:
-- Group list with permissions
-- Add/remove groups
-- Permission checkboxes (read, write, delete, share, manage)
-- Circle integration
-
-##### `src/settings/QuotaSelect.tsx`
-Dropdown for selecting storage quota (unlimited, 1GB, 5GB, etc.).
-
-##### `src/settings/AdminGroupSelect.tsx` / `SubAdminGroupSelect.tsx`
-Group selectors for delegated admin configuration.
-
-##### `src/settings/SubmitInput.tsx`
-Reusable input component with submit button (used for folder creation).
-
-##### `src/settings/SortArrow.tsx`
-Column sort indicator for table headers.
-
-##### `src/settings/*.scss` (Styles)
-- `App.scss` - Main settings styles
-- `EditSelect.scss` - Select control styles
-- `FolderGroups.scss` - Group component styles
-
-##### `src/settings/index.tsx` (Entry Point)
-Renders React app into admin settings page container.
+**Current state:** No admin UI. The Repositories app will need a completely new admin interface designed for Git repository management (clone URLs, branch settings, etc.).
 
 ---
 
