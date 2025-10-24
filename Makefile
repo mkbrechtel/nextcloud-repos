@@ -1,37 +1,43 @@
 # Makefile for building the project
 #
 # SPDX-FileCopyrightText: 2017 Nextcloud GmbH and Nextcloud contributors
+# SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
-app_name=groupfolders
-project_dir=$(CURDIR)/../$(app_name)
+app_name=repos
+project_dir=$(CURDIR)
 build_dir=$(project_dir)/build
 appstore_dir=$(build_dir)/appstore
 sign_dir=$(build_dir)/sign
 package_name=$(app_name)
 cert_dir=$(HOME)/.nextcloud/certificates
-webpack=node_modules/.bin/webpack
-version+=8.0.0
+version=21.0.0-dev.1
 
-jssources=$(wildcard js/*) $(wildcard js/*/*) $(wildcard css/*/*)  $(wildcard css/*)
+jssources=$(wildcard src/**/*) $(wildcard css/*/*)  $(wildcard css/*)
 othersources=$(wildcard appinfo/*) $(wildcard css/*/*) $(wildcard controller/*/*) $(wildcard templates/*/*) $(wildcard log/*/*)
 
-all: build/main.js
+all: js
 
 clean:
 	rm -rf $(sign_dir)
 	rm -rf $(build_dir)/$(app_name)-$(version).tar.gz
 	rm -rf node_modules
+	rm -rf js/
 
 node_modules: package.json
-	npm install --deps
+	npm install
 
-build/main.js: node_modules $(jssources)
+.PHONY: js
+js: node_modules $(jssources)
 	npm run build
+
+.PHONY: dev
+dev: node_modules
+	npm run dev
 
 .PHONY: watch
 watch: node_modules
-	$(webpack) serve --hot --port 3000 --public localcloud.icewind.me:444 --config webpack.dev.config.js
+	npm run watch
 
 release: appstore create-tag
 
@@ -39,7 +45,7 @@ create-tag:
 	git tag -s -a v$(version) -m "Tagging the $(version) release."
 	git push origin v$(version)
 
-appstore: clean build/main.js
+appstore: clean js
 	mkdir -p $(sign_dir)
 	rsync -a \
 	--exclude=/.babelrc.js \
@@ -70,7 +76,7 @@ appstore: clean build/main.js
 	--exclude=/translationfiles \
 	--exclude=/tsconfig.json \
 	--exclude=/vendor \
-	--exclude=/webpack.* \
+	--exclude=/rollup.config.js \
 	$(project_dir)/ $(sign_dir)/$(app_name)
 	tar -czf $(build_dir)/$(app_name)-$(version).tar.gz \
 		-C $(sign_dir) $(app_name)

@@ -62,16 +62,20 @@ WORKDIR /var/www/html/custom_apps/repos
 
 FROM node:20-bookworm-slim as app-build
 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends make && \
+    rm -rf /var/lib/apt/lists/*
+
 WORKDIR /build
 
 COPY package.json package-lock.json ./
 RUN npm install
 
-COPY webpack.js babel.config.js .babelrc.js tsconfig.json .eslintrc.js ./
+COPY rollup.config.js babel.config.cjs .babelrc.cjs tsconfig.json .eslintrc.js ./
 COPY src ./src
 COPY img ./img
 
-RUN npm run build
+RUN npm run dev
 
 FROM server-base as dev-env
 
