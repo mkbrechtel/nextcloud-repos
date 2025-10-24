@@ -6,10 +6,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\ACL;
+namespace OCA\Repos\ACL;
 
-use OCA\GroupFolders\ACL\UserMapping\IUserMapping;
-use OCA\GroupFolders\ACL\UserMapping\UserMapping;
+use OCA\Repos\ACL\UserMapping\IUserMapping;
+use OCA\Repos\ACL\UserMapping\UserMapping;
 use OCP\Constants;
 use Sabre\Xml\Reader;
 use Sabre\Xml\Writer;

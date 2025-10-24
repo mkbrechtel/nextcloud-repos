@@ -6,10 +6,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\ACL;
+namespace OCA\Repos\ACL;
 
-use OCA\GroupFolders\ACL\UserMapping\IUserMappingManager;
-use OCA\GroupFolders\Trash\TrashManager;
+use OCA\Repos\ACL\UserMapping\IUserMappingManager;
+use OCA\Repos\Trash\TrashManager;
 use OCP\IAppConfig;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
