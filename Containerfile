@@ -27,6 +27,12 @@ CMD ["apache2-foreground"]
 
 FROM server-base as dev-env
 
+# Ensure custom_apps directory exists with correct permissions
+RUN mkdir -p /var/www/html/custom_apps && \
+    chown -R www-data:www-data /var/www/html/custom_apps
+
 # Copy the app into the Nextcloud apps directory
-#COPY --chown=www-data:www-data . /usr/src/nextcloud/custom_apps/repos
-#RUN php occ app:enable repos
+COPY --chown=www-data:www-data . /var/www/html/custom_apps/repos
+
+# Enable the repos app
+RUN php occ app:enable repos
