@@ -1,9 +1,10 @@
 # SPDX-FileCopyrightText: 2024 Nextcloud GmbH and Nextcloud contributors
+# SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
 # SPDX-License-Identifier: AGPL-3.0-or-later
 version = 1
-SPDX-PackageName = "nextcloud"
-SPDX-PackageSupplier = "Nextcloud <info@nextcloud.com>"
-SPDX-PackageDownloadLocation = "https://github.com/nextcloud/server"
+SPDX-PackageName = "nextcloud-repos"
+SPDX-PackageSupplier = "Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>"
+SPDX-PackageDownloadLocation = "https://codeberg.org/mkbrechtel/nextcloud-repos"
 
 [[annotations]]
 path = [".github/**"]
@@ -81,4 +82,10 @@ SPDX-License-Identifier = "MIT"
 path = ["openapi.json", "src/types/openapi/openapi.ts"]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2024 Nextcloud GmbH and Nextcloud contributors"
+SPDX-License-Identifier = "AGPL-3.0-or-later"
+
+[[annotations]]
+path = ["js/**"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 Nextcloud GmbH and Nextcloud contributors"
 SPDX-License-Identifier = "AGPL-3.0-or-later"

@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 FROM docker.io/nextcloud:32 as server-base
 
 RUN apt-get update && \
@@ -103,7 +106,6 @@ WORKDIR /release
 
 # Copy only the necessary files for release (exclude dev/build files)
 COPY appinfo ./appinfo
-COPY css ./css
 COPY img ./img
 COPY l10n ./l10n
 COPY lib ./lib

@@ -9,3 +9,8 @@ js/
 cypress/downloads/
 .idea/
 tests/coverage/
+tests/browser/screenshots/
+tests/browser/html_output/
+tests/browser/__pycache__/
+tests/browser/.pytest_cache/
+repos-release.tar.gz

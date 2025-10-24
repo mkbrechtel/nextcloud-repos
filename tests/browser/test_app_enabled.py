@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
 """
 Nextcloud Repos App - Basic App Test
 
