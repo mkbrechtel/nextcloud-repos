@@ -5,9 +5,9 @@ declare(strict_types=1);
  * SPDX-FileCopyrightText: 2023 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-namespace OCA\GroupFolders\AppInfo;
+namespace OCA\Repos\AppInfo;
 
-use OCA\GroupFolders\Folder\FolderManager;
+use OCA\Repos\Folder\FolderManager;
 use OCP\App\IAppManager;
 use OCP\Capabilities\ICapability;
 use OCP\IUser;
@@ -23,7 +23,7 @@ class Capabilities implements ICapability {
 
 	/**
 	 * @return array{
-	 *     groupfolders?: array{
+	 *     repos?: array{
 	 *         appVersion: string,
 	 *         hasGroupFolders: bool,
 	 *     },

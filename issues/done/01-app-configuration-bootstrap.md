@@ -47,3 +47,6 @@ The app is currently named "groupfolders" with namespace `OCA\GroupFolders`. It'
 - Mostly search-and-replace operation for namespace and app name
 - Keep all the bootstrap infrastructure as-is
 - Don't worry about implementation functionality now, we are in the refactoring stage
+
+## Status
+✅ Implemented in commit 4550f3be on 2025-10-24

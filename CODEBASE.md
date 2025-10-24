@@ -3,13 +3,16 @@ SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechte
 SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 
-# Codebase Analysis: Nextcloud Team Folders (GroupFolders) App
+# Codebase Analysis: Nextcloud Repositories App (formerly Team Folders/GroupFolders)
 
-This document provides a comprehensive analysis of the Nextcloud Team Folders app codebase, organized by functional categories. **Note: This codebase is currently the unmodified Team Folders app (formerly "Group Folders") and serves as the starting point for a hard fork to create Git/Git-Annex/Datalad repository integration.** The current codebase provides shared folder management with access control lists (ACL), versioning, trash, and team-based permissions.
+This document provides a comprehensive analysis of the Nextcloud Repositories app codebase, organized by functional categories. **Note: This codebase has been forked from the Team Folders app (formerly "Group Folders") and is being refactored to create Git/Git-Annex/Datalad repository integration.**
+
+**Refactoring Status:** A comprehensive refactoring plan has been created in the `issues/` directory, with 20 issue files documenting the strategy for converting this app to the Repositories app. See `issues/README.md` for details. **The app has been renamed from 'groupfolders' to 'repos' with namespace OCA\Repos.**
 
 **App Information:**
-- **App ID:** `groupfolders`
-- **Display Name:** Team Folders
+- **App ID:** `repos` (renamed from `groupfolders`)
+- **Display Name:** Repositories (renamed from "Team Folders")
+- **Namespace:** `OCA\Repos` (changed from `OCA\GroupFolders`)
 - **Version:** 21.0.0-dev.1
 - **Nextcloud Requirement:** >= 33
 - **Backend:** PHP 8.2 (97 files, ~9,236 lines)
@@ -48,17 +51,24 @@ This document provides a comprehensive analysis of the Nextcloud Team Folders ap
 
 **Purpose:** Defines the app's identity, capabilities, and initializes all components.
 
+### Status: ✅ UPDATED - App renamed to "repos"
+
 #### Key Files:
 
 ##### `appinfo/info.xml` (App Manifest)
+**Updated:** App renamed from 'groupfolders' to 'repos'
+
 The central configuration file that defines:
-- App metadata (ID, name, version, author, license)
+- App metadata:
+  - **ID:** `repos` (changed from `groupfolders`)
+  - **Name:** "Repositories" (changed from "Team Folders")
+  - Version, author, license
 - Nextcloud version requirements
-- Dependencies (circles app)
+- Dependencies ~~(circles app removed)~~
 - Registered services:
-  - Background jobs (ExpireGroupVersions, ExpireGroupTrash)
-  - Commands (create, delete, rename, scan, quota, group, ACL, expire commands)
-  - Settings (admin panel registration)
+  - ~~Background jobs (removed)~~
+  - Commands (create, delete, rename, scan, quota, group, ACL commands)
+  - ~~Settings (admin panel removed)~~
   - Trash backend integration
   - Versioning backend integration
   - DAV plugins (PropFindPlugin, ACLPlugin)
@@ -66,19 +76,22 @@ The central configuration file that defines:
 ##### `lib/AppInfo/Application.php` (Bootstrap)
 **Lines:** ~250+ lines
 **Significance:** 🔴 Critical - Application entry point
+**Updated:** Namespace changed to `OCA\Repos`
 
 Main bootstrap class implementing `IBootstrap`. Responsibilities:
 - **Service Registration:** Configures dependency injection container
 - **Event Listeners:** Registers listeners for:
   - `LoadAdditionalScriptsEvent` - Loads frontend resources
   - `BeforeTemplateRenderedEvent` - Injects sharing sidebar
-  - `CircleDestroyedEvent` - Handles team deletion
+  - ~~`CircleDestroyedEvent` (removed)~~
   - `NodeRenamedEvent` - Invalidates ACL cache on file rename
 - **Mount Provider:** Registers `MountProvider` for folder discovery
 - **ACL Manager:** Configures ACL system with user mapping
-- **Background Jobs:** Registers periodic maintenance tasks
+- ~~**Background Jobs:** (removed)~~
 
 ##### `lib/AppInfo/Capabilities.php`
+**Updated:** Namespace changed to `OCA\Repos`
+
 Exposes app capabilities to Nextcloud clients via the Capabilities API.
 
 ---

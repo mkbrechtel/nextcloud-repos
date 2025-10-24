@@ -4,26 +4,22 @@
   - SPDX-License-Identifier: AGPL-3.0-or-later
 -->
 <info>
-	<id>groupfolders</id>
-	<name>Team Folders</name>
-	<summary>Shared folders managed by admins, accessible to designated teams with configurable permissions and quotas</summary>
+	<id>repos</id>
+	<name>Repositories</name>
+	<summary>Integration for Git, Git-Annex, and Datalad repositories within Nextcloud</summary>
 	<description>
 		<![CDATA[
-			Team Folders (formerly "Group Folders") allows administrators to create and manage shared folders that are accessible 
-			to selected teams within Nextcloud.
+			Repositories provides integration for managing Git, Git-Annex, and Datalad repositories within Nextcloud.
 
-			Admins can configure folders from the Team Folders section in the admin settings, where they can grant access to one 
-			or more teams, set custom permissions (such as read, write, and sharing rights), and assign storage quotas to each 
-			folder.
+			This app enables version-controlled collaborative workflows for research data management, code repositories,
+			and structured file versioning using Git and related tools.
 
-			As of Hub 10/Nextcloud 31, admins must be members of a team to assign it a Team Folder. The app supports advanced 
-			features such as quota management, granular access control, and integration with Nextcloud’s trash and versioning 
-			systems.
+			The app is currently in development and undergoing refactoring from the original groupfolders codebase.
 		]]>
-	</description>	<version>21.0.0-dev.1</version>
+	</description>	<version>1.0.0-dev.1</version>
 	<licence>agpl</licence>
-	<author>Robin Appelman</author>
-	<namespace>GroupFolders</namespace>
+	<author>Markus Katharina Brechtel</author>
+	<namespace>Repos</namespace>
 	<types>
 		<filesystem/>
 		<dav/>
@@ -31,62 +27,58 @@
 
 	<category>files</category>
 
-	<website>https://github.com/nextcloud/groupfolders</website>
-	<bugs>https://github.com/nextcloud/groupfolders/issues</bugs>
-	<repository type="git">https://github.com/nextcloud/groupfolders.git</repository>
-
-	<screenshot>https://raw.githubusercontent.com/nextcloud/groupfolders/master/screenshots/folders.png</screenshot>
-	<screenshot>https://raw.githubusercontent.com/nextcloud/groupfolders/master/screenshots/edit.png</screenshot>
-	<screenshot>https://raw.githubusercontent.com/nextcloud/groupfolders/master/screenshots/permissions.png</screenshot>
+	<website>https://codeberg.org/mkbrechtel/nextcloud-repos</website>
+	<bugs>https://codeberg.org/mkbrechtel/nextcloud-repos/issues</bugs>
+	<repository type="git">https://codeberg.org/mkbrechtel/nextcloud-repos.git</repository>
 
 	<dependencies>
 		<nextcloud min-version="33" max-version="33" />
 	</dependencies>
 
 	<background-jobs>
-		<job>OCA\GroupFolders\BackgroundJob\ExpireGroupVersions</job>
-		<job>OCA\GroupFolders\BackgroundJob\ExpireGroupTrash</job>
+		<job>OCA\Repos\BackgroundJob\ExpireGroupVersions</job>
+		<job>OCA\Repos\BackgroundJob\ExpireGroupTrash</job>
 	</background-jobs>
 
 	<repair-steps>
 		<post-migration>
-			<step>OCA\GroupFolders\Migration\WrongDefaultQuotaRepairStep</step>
+			<step>OCA\Repos\Migration\WrongDefaultQuotaRepairStep</step>
 		</post-migration>
 	</repair-steps>
 
 	<commands>
-		<command>OCA\GroupFolders\Command\ExpireGroup\ExpireGroupBase</command>
-		<command>OCA\GroupFolders\Command\ListCommand</command>
-		<command>OCA\GroupFolders\Command\ACL</command>
-		<command>OCA\GroupFolders\Command\Quota</command>
-		<command>OCA\GroupFolders\Command\Group</command>
-		<command>OCA\GroupFolders\Command\Create</command>
-		<command>OCA\GroupFolders\Command\Rename</command>
-		<command>OCA\GroupFolders\Command\Delete</command>
-		<command>OCA\GroupFolders\Command\Scan</command>
-		<command>OCA\GroupFolders\Command\Trashbin\Cleanup</command>
+		<command>OCA\Repos\Command\ExpireGroup\ExpireGroupBase</command>
+		<command>OCA\Repos\Command\ListCommand</command>
+		<command>OCA\Repos\Command\ACL</command>
+		<command>OCA\Repos\Command\Quota</command>
+		<command>OCA\Repos\Command\Group</command>
+		<command>OCA\Repos\Command\Create</command>
+		<command>OCA\Repos\Command\Rename</command>
+		<command>OCA\Repos\Command\Delete</command>
+		<command>OCA\Repos\Command\Scan</command>
+		<command>OCA\Repos\Command\Trashbin\Cleanup</command>
 	</commands>
 
 	<settings>
-		<admin>OCA\GroupFolders\Settings\Admin</admin>
-		<admin-section>OCA\GroupFolders\Settings\Section</admin-section>
+		<admin>OCA\Repos\Settings\Admin</admin>
+		<admin-section>OCA\Repos\Settings\Section</admin-section>
 	</settings>
 
 	<sabre>
 		<collections>
-			<collection>OCA\GroupFolders\DAV\RootCollection</collection>
+			<collection>OCA\Repos\DAV\RootCollection</collection>
 		</collections>
 		<plugins>
-			<plugin>OCA\GroupFolders\DAV\PropFindPlugin</plugin>
-			<plugin>OCA\GroupFolders\DAV\ACLPlugin</plugin>
+			<plugin>OCA\Repos\DAV\PropFindPlugin</plugin>
+			<plugin>OCA\Repos\DAV\ACLPlugin</plugin>
 		</plugins>
 	</sabre>
 
 	<trash>
-		<backend for="OCA\GroupFolders\Mount\GroupFolderStorage">OCA\GroupFolders\Trash\TrashBackend</backend>
+		<backend for="OCA\Repos\Mount\GroupFolderStorage">OCA\Repos\Trash\TrashBackend</backend>
 	</trash>
 
 	<versions>
-		<backend for="OCA\GroupFolders\Mount\GroupFolderStorage">OCA\GroupFolders\Versions\VersionsBackend</backend>
+		<backend for="OCA\Repos\Mount\GroupFolderStorage">OCA\Repos\Versions\VersionsBackend</backend>
 	</versions>
 </info>
