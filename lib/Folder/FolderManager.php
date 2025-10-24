@@ -14,6 +14,7 @@ use OCA\Repos\ACL\UserMapping\IUserMapping;
 use OCA\Repos\ACL\UserMapping\IUserMappingManager;
 use OCA\Repos\ACL\UserMapping\UserMapping;
 use OCA\Repos\AppInfo\Application;
+use OCA\Repos\Config\ConfigManager;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\Mount\GroupMountPoint;
 use OCA\Repos\ResponseDefinitions;
@@ -27,7 +28,6 @@ use OCP\Files\IMimeTypeLoader;
 use OCP\Files\IRootFolder;
 use OCP\IAppConfig;
 use OCP\IConfig;
-use OCP\IDBConnection;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -52,7 +52,7 @@ class FolderManager {
 	public const SPACE_DEFAULT = -4;
 
 	public function __construct(
-		private readonly IDBConnection $connection,
+		private readonly ConfigManager $configManager,
 		private readonly IGroupManager $groupManager,
 		private readonly IMimeTypeLoader $mimeTypeLoader,
 		private readonly LoggerInterface $logger,
@@ -69,60 +69,59 @@ class FolderManager {
 	 * @throws Exception
 	 */
 	public function getAllFolders(): array {
-		$applicableMap = $this->getAllApplicable();
-		$folderMappings = $this->getAllFolderMappings();
-
-		$query = $this->connection->getQueryBuilder();
-
-		$query->select('folder_id', 'mount_point', 'quota', 'acl', 'storage_id', 'root_id', 'options')
-			->from('group_folders', 'f');
-
-		$rows = $query->executeQuery()->fetchAll();
-
+		$repos = $this->configManager->getRepositories();
 		$folderMap = [];
-		foreach ($rows as $row) {
-			$folder = $this->rowToFolder($row);
-			$id = $folder->id;
+
+		foreach ($repos as $repo) {
+			$id = $repo['id'];
+			$folder = $this->repoArrayToFolder($repo);
+			$groups = $this->configManager->getGroupsForRepository($id);
+			$manageEntries = $this->configManager->getManageForRepository($id);
+
+			$applicableMap = $this->groupsArrayToApplicableMap($groups);
+			$manageAcl = $this->getManageAcl($manageEntries);
+
 			$folderMap[$id] = FolderDefinitionWithMappings::fromFolder(
 				$folder,
-				$applicableMap[$id] ?? [],
-				$this->getManageAcl($folderMappings[$id] ?? []),
+				$applicableMap,
+				$manageAcl,
 			);
 		}
 
 		return $folderMap;
 	}
 
-	private function selectWithFileCache(?IQueryBuilder $query = null): IQueryBuilder {
-		if (!$query) {
-			$query = $this->connection->getQueryBuilder();
-		}
+	/**
+	 * Convert repository array from config to FolderDefinition
+	 */
+	private function repoArrayToFolder(array $repo): FolderDefinition {
+		return new FolderDefinition(
+			(int)($repo['id'] ?? 0),
+			(string)($repo['mount_point'] ?? ''),
+			$this->getRealQuota((int)($repo['quota'] ?? self::SPACE_DEFAULT)),
+			(bool)($repo['acl'] ?? false),
+			(int)($repo['storage_id'] ?? 0),
+			(int)($repo['root_id'] ?? 0),
+			$repo['options'] ?? ['separate-storage' => true],
+		);
+	}
 
-		$query->select(
-			'f.folder_id',
-			'mount_point',
-			'quota',
-			'acl',
-			'storage_id',
-			'root_id',
-			'options',
-			'c.fileid',
-			'c.storage',
-			'c.path',
-			'c.name',
-			'c.mimetype',
-			'c.mimepart',
-			'c.size',
-			'c.mtime',
-			'c.storage_mtime',
-			'c.etag',
-			'c.encrypted',
-			'c.parent',
-		)
-			->selectAlias('c.permissions', 'permissions')
-			->from('group_folders', 'f')
-			->leftJoin('f', 'filecache', 'c', $query->expr()->eq('c.fileid', 'f.root_id'));
-		return $query;
+	/**
+	 * Convert groups array to applicable map format
+	 */
+	private function groupsArrayToApplicableMap(array $groups): array {
+		$map = [];
+		foreach ($groups as $group) {
+			$groupId = (string)($group['group_id'] ?? '');
+			if ($groupId) {
+				$map[$groupId] = [
+					'displayName' => $groupId,
+					'permissions' => (int)($group['permissions'] ?? Constants::PERMISSION_ALL),
+					'type' => 'group',
+				];
+			}
+		}
+		return $map;
 	}
 
 	/**
@@ -130,25 +129,42 @@ class FolderManager {
 	 * @throws Exception
 	 */
 	public function getAllFoldersWithSize(): array {
-		$applicableMap = $this->getAllApplicable();
-
-		$query = $this->selectWithFileCache();
-
-		$rows = $query->executeQuery()->fetchAll();
-
-		$folderMappings = $this->getAllFolderMappings();
-
+		$repos = $this->configManager->getRepositories();
 		$folderMap = [];
-		foreach ($rows as $row) {
-			$folder = $this->rowToFolder($row);
-			$id = $folder->id;
+
+		foreach ($repos as $repo) {
+			$id = $repo['id'];
+			$folder = $this->repoArrayToFolder($repo);
+			$groups = $this->configManager->getGroupsForRepository($id);
+			$manageEntries = $this->configManager->getManageForRepository($id);
+
+			$applicableMap = $this->groupsArrayToApplicableMap($groups);
+			$manageAcl = $this->getManageAcl($manageEntries);
+
+			// Create a minimal cache entry (size calculation requires scanning, which is done separately)
+			$cacheEntry = Cache::cacheEntryFromData([
+				'fileid' => $repo['root_id'] ?? 0,
+				'storage' => $repo['storage_id'] ?? 0,
+				'path' => '',
+				'name' => $repo['mount_point'] ?? '',
+				'mimetype' => 'httpd/unix-directory',
+				'mimepart' => 'httpd',
+				'size' => -1, // Unknown size, needs scan
+				'mtime' => time(),
+				'storage_mtime' => time(),
+				'etag' => '',
+				'encrypted' => 0,
+				'parent' => -1,
+				'permissions' => Constants::PERMISSION_ALL,
+			], $this->mimeTypeLoader);
+
 			$folderMap[$id] = FolderWithMappingsAndCache::fromFolderWithMapping(
 				FolderDefinitionWithMappings::fromFolder(
 					$folder,
-					$applicableMap[$id] ?? [],
-					$this->getManageAcl($folderMappings[$id] ?? []),
+					$applicableMap,
+					$manageAcl,
 				),
-				Cache::cacheEntryFromData($row, $this->mimeTypeLoader),
+				$cacheEntry,
 			);
 		}
 

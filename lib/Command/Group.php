@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\Repos\Command;
 
-use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\Mount\MountProvider;
 use OCP\Constants;
@@ -28,18 +28,18 @@ class Group extends FolderCommand {
 	];
 
 	public function __construct(
-		FolderManager $folderManager,
+		RepoManager $repoManager,
 		IRootFolder $rootFolder,
 		MountProvider $mountProvider,
 		FolderStorageManager $folderStorageManager,
 		private readonly IGroupManager $groupManager,
 	) {
-		parent::__construct($folderManager, $rootFolder, $mountProvider, $folderStorageManager);
+		parent::__construct($repoManager, $rootFolder, $mountProvider, $folderStorageManager);
 	}
 
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:group')
+			->setName('repos:group')
 			->setDescription('Edit the groups that have access to a Team folder')
 			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to configure')
 			->addArgument('group', InputArgument::REQUIRED, 'The group to configure')

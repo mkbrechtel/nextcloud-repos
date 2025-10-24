@@ -125,14 +125,14 @@ class FolderStorageManager {
 		bool $init = false,
 	): IStorage {
 		$dataDirectory = $this->config->getSystemValue('datadirectory');
-		$rootPath = $dataDirectory . '/__groupfolders/' . $folderId;
+		$rootPath = $dataDirectory . '/__repos/' . $folderId;
 		if ($init) {
 			$result = mkdir($rootPath . '/files', recursive:  true);
 			$result = $result && mkdir($rootPath . '/trash');
 			$result = $result && mkdir($rootPath . '/versions');
 
 			if (!$result) {
-				throw new \Exception('Failed to create base directories for group folder ' . $folderId);
+				throw new \Exception('Failed to create base directories for repository ' . $folderId);
 			}
 		}
 
@@ -196,9 +196,9 @@ class FolderStorageManager {
 		} else {
 			try {
 				/** @var Folder $parentFolder */
-				$parentFolder = $this->rootFolder->get('__groupfolders');
+				$parentFolder = $this->rootFolder->get('__repos');
 			} catch (NotFoundException) {
-				$parentFolder = $this->rootFolder->newFolder('__groupfolders');
+				$parentFolder = $this->rootFolder->newFolder('__repos');
 			}
 			$this->cachedFolders['root'] = $parentFolder;
 		}

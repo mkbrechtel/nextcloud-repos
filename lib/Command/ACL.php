@@ -12,9 +12,7 @@ use OCA\Repos\ACL\ACLManagerFactory;
 use OCA\Repos\ACL\Rule;
 use OCA\Repos\ACL\RuleManager;
 use OCA\Repos\ACL\UserMapping\UserMapping;
-use OCA\Repos\Folder\FolderDefinitionWithPermissions;
-use OCA\Repos\Folder\FolderManager;
-use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Folder\RepoManager;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\Mount\MountProvider;
 use OCP\Constants;
@@ -29,7 +27,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class ACL extends FolderCommand {
 	public function __construct(
-		FolderManager $folderManager,
+		RepoManager $repoManager,
 		IRootFolder $rootFolder,
 		MountProvider $mountProvider,
 		FolderStorageManager $folderStorageManager,
@@ -37,12 +35,12 @@ class ACL extends FolderCommand {
 		private readonly ACLManagerFactory $aclManagerFactory,
 		private readonly IUserManager $userManager,
 	) {
-		parent::__construct($folderManager, $rootFolder, $mountProvider, $folderStorageManager);
+		parent::__construct($repoManager, $rootFolder, $mountProvider, $folderStorageManager);
 	}
 
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:permissions')
+			->setName('repos:permissions')
 			->setDescription('Configure advanced permissions for a configured Team folder')
 			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to configure')
 			->addOption('enable', 'e', InputOption::VALUE_NONE, 'Enable advanced permissions for the folder')

@@ -35,19 +35,7 @@
 		<nextcloud min-version="32" max-version="32" />
 	</dependencies>
 
-	<background-jobs>
-		<job>OCA\Repos\BackgroundJob\ExpireGroupVersions</job>
-		<job>OCA\Repos\BackgroundJob\ExpireGroupTrash</job>
-	</background-jobs>
-
-	<repair-steps>
-		<post-migration>
-			<step>OCA\Repos\Migration\WrongDefaultQuotaRepairStep</step>
-		</post-migration>
-	</repair-steps>
-
 	<commands>
-		<command>OCA\Repos\Command\ExpireGroup\ExpireGroupBase</command>
 		<command>OCA\Repos\Command\ListCommand</command>
 		<command>OCA\Repos\Command\ACL</command>
 		<command>OCA\Repos\Command\Quota</command>
@@ -56,7 +44,6 @@
 		<command>OCA\Repos\Command\Rename</command>
 		<command>OCA\Repos\Command\Delete</command>
 		<command>OCA\Repos\Command\Scan</command>
-		<command>OCA\Repos\Command\Trashbin\Cleanup</command>
 	</commands>
 
 	<settings>

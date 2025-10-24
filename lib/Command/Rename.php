@@ -15,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Rename extends FolderCommand {
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:rename')
+			->setName('repos:rename')
 			->setDescription('Rename Team folder')
 			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to rename')
 			->addArgument('name', InputArgument::REQUIRED, 'New value name of the folder');

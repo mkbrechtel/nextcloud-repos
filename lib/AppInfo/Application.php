@@ -11,34 +11,26 @@ namespace OCA\Repos\AppInfo;
 use OCA\DAV\Connector\Sabre\Principal;
 use OCA\Files\Event\LoadAdditionalScriptsEvent;
 use OCA\Files_Sharing\Event\BeforeTemplateRenderedEvent;
-use OCA\Files_Trashbin\Expiration;
 use OCA\Repos\ACL\ACLManagerFactory;
 use OCA\Repos\ACL\UserMapping\IUserMappingManager;
 use OCA\Repos\ACL\UserMapping\UserMappingManager;
 use OCA\Repos\AuthorizedAdminSettingMiddleware;
-use OCA\Repos\BackgroundJob\ExpireGroupPlaceholder;
-use OCA\Repos\BackgroundJob\ExpireGroupTrash as ExpireGroupTrashJob;
-use OCA\Repos\BackgroundJob\ExpireGroupVersions as ExpireGroupVersionsJob;
 use OCA\Repos\CacheListener;
-use OCA\Repos\Command\ExpireGroup\ExpireGroupBase;
-use OCA\Repos\Command\ExpireGroup\ExpireGroupTrash;
-use OCA\Repos\Command\ExpireGroup\ExpireGroupVersions;
-use OCA\Repos\Command\ExpireGroup\ExpireGroupVersionsTrash;
+use OCA\Repos\Config\ConfigManager;
 use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCA\Repos\Listeners\LoadAdditionalScriptsListener;
 use OCA\Repos\Listeners\NodeRenamedListener;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\Mount\MountProvider;
 use OCA\Repos\Trash\TrashBackend;
 use OCA\Repos\Trash\TrashManager;
-use OCA\Repos\Versions\GroupVersionsExpireManager;
 use OCA\Repos\Versions\VersionsBackend;
+use OCP\IConfig;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
-use OCP\AppFramework\Utility\ITimeFactory;
-use OCP\BackgroundJob\TimedJob;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\Config\IMountProviderCollection;
 use OCP\Files\Events\Node\NodeRenamedEvent;
@@ -71,6 +63,24 @@ class Application extends App implements IBootstrap {
 		$context->registerServiceAlias('principalBackend', Principal::class);
 
 		$context->registerCapability(Capabilities::class);
+
+		// Register ConfigManager and RepoManager
+		$context->registerService(ConfigManager::class, function (ContainerInterface $c): ConfigManager {
+			return new ConfigManager(
+				$c->get(IConfig::class)
+			);
+		});
+
+		$context->registerService(RepoManager::class, function (ContainerInterface $c): RepoManager {
+			return new RepoManager(
+				$c->get(ConfigManager::class),
+				$c->get(FolderStorageManager::class),
+				$c->get(IEventDispatcher::class),
+				$c->get(IConfig::class),
+				$c->get(IAppConfig::class),
+				$c->get(LoggerInterface::class)
+			);
+		});
 
 		$context->registerEventListener(LoadAdditionalScriptsEvent::class, LoadAdditionalScriptsListener::class);
 		$context->registerEventListener(BeforeTemplateRenderedEvent::class, LoadAdditionalScriptsListener::class);
@@ -116,65 +126,6 @@ class Application extends App implements IBootstrap {
 			return $trashBackend;
 		});
 
-		$context->registerService(ExpireGroupBase::class, function (ContainerInterface $c): ExpireGroupBase {
-			// Multiple implementation of this class exists depending on if the trash and versions
-			// backends are enabled.
-
-			$hasVersionApp = interface_exists(\OCA\Files_Versions\Versions\IVersionBackend::class);
-			$hasTrashApp = interface_exists(\OCA\Files_Trashbin\Trash\ITrashBackend::class);
-
-			if ($hasVersionApp && $hasTrashApp) {
-				return new ExpireGroupVersionsTrash(
-					$c->get(GroupVersionsExpireManager::class),
-					$c->get(IEventDispatcher::class),
-					$c->get(TrashBackend::class),
-					$c->get(Expiration::class)
-				);
-			}
-
-			if ($hasVersionApp) {
-				return new ExpireGroupVersions(
-					$c->get(GroupVersionsExpireManager::class),
-					$c->get(IEventDispatcher::class),
-				);
-			}
-
-			if ($hasTrashApp) {
-				return new ExpireGroupTrash(
-					$c->get(TrashBackend::class),
-					$c->get(Expiration::class)
-				);
-			}
-
-			return new ExpireGroupBase();
-		});
-
-		$context->registerService(\OCA\Repos\BackgroundJob\ExpireGroupVersions::class, function (ContainerInterface $c): TimedJob {
-			if (interface_exists(\OCA\Files_Versions\Versions\IVersionBackend::class)) {
-				return new ExpireGroupVersionsJob(
-					$c->get(ITimeFactory::class),
-					$c->get(GroupVersionsExpireManager::class),
-					$c->get(IAppConfig::class),
-					$c->get(FolderManager::class),
-					$c->get(LoggerInterface::class),
-				);
-			}
-
-			return new ExpireGroupPlaceholder($c->get(ITimeFactory::class));
-		});
-
-		$context->registerService(\OCA\Repos\BackgroundJob\ExpireGroupTrash::class, function (ContainerInterface $c): TimedJob {
-			if (interface_exists(\OCA\Files_Trashbin\Trash\ITrashBackend::class)) {
-				return new ExpireGroupTrashJob(
-					$c->get(TrashBackend::class),
-					$c->get(Expiration::class),
-					$c->get(IAppConfig::class),
-					$c->get(ITimeFactory::class)
-				);
-			}
-
-			return new ExpireGroupPlaceholder($c->get(ITimeFactory::class));
-		});
 
 		$context->registerServiceAlias(IUserMappingManager::class, UserMappingManager::class);
 

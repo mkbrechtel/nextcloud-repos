@@ -21,7 +21,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Scan extends FolderCommand {
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:scan')
+			->setName('repos:scan')
 			->setDescription('Scan a Team folder for outside changes')
 			->addArgument(
 				'folder_id',
