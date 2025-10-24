@@ -6,7 +6,7 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Trash;
+namespace OCA\Repos\Trash;
 
 use OC\Encryption\Exceptions\DecryptionFailedException;
 use OC\Files\ObjectStore\ObjectStoreStorage;
@@ -16,13 +16,13 @@ use OCA\Files_Trashbin\Expiration;
 use OCA\Files_Trashbin\Storage;
 use OCA\Files_Trashbin\Trash\ITrashBackend;
 use OCA\Files_Trashbin\Trash\ITrashItem;
-use OCA\GroupFolders\ACL\ACLManagerFactory;
-use OCA\GroupFolders\Folder\FolderDefinitionWithPermissions;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
-use OCA\GroupFolders\Mount\GroupFolderStorage;
-use OCA\GroupFolders\Mount\MountProvider;
-use OCA\GroupFolders\Versions\VersionsBackend;
+use OCA\Repos\ACL\ACLManagerFactory;
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Mount\GroupFolderStorage;
+use OCA\Repos\Mount\MountProvider;
+use OCA\Repos\Versions\VersionsBackend;
 use OCP\Constants;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;

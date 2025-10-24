@@ -6,11 +6,11 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Trash;
+namespace OCA\Repos\Trash;
 
 use OCA\Files_Trashbin\Trash\ITrashBackend;
 use OCA\Files_Trashbin\Trash\TrashItem;
-use OCA\GroupFolders\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
 use OCP\Files\Node;
 use OCP\IUser;
 
