@@ -6,11 +6,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Versions;
+namespace OCA\Repos\Versions;
 
 use OCA\Files_Versions\Versions\IVersionBackend;
 use OCA\Files_Versions\Versions\Version;
-use OCA\GroupFolders\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinition;
 use OCP\Files\File;
 use OCP\Files\FileInfo;
 use OCP\IUser;

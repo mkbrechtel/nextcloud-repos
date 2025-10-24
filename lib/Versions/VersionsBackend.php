@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Versions;
+namespace OCA\Repos\Versions;
 
 use OCA\DAV\Connector\Sabre\Exception\Forbidden;
 use OCA\Files_Versions\Versions\IDeletableVersionBackend;
@@ -16,13 +16,13 @@ use OCA\Files_Versions\Versions\INeedSyncVersionBackend;
 use OCA\Files_Versions\Versions\IVersion;
 use OCA\Files_Versions\Versions\IVersionBackend;
 use OCA\Files_Versions\Versions\IVersionsImporterBackend;
-use OCA\GroupFolders\Folder\FolderDefinition;
-use OCA\GroupFolders\Folder\FolderDefinitionWithMappings;
-use OCA\GroupFolders\Folder\FolderDefinitionWithPermissions;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
-use OCA\GroupFolders\Mount\GroupFolderStorage;
-use OCA\GroupFolders\Mount\GroupMountPoint;
-use OCA\GroupFolders\Mount\MountProvider;
+use OCA\Repos\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinitionWithMappings;
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Mount\GroupFolderStorage;
+use OCA\Repos\Mount\GroupMountPoint;
+use OCA\Repos\Mount\MountProvider;
 use OCP\AppFramework\Db\DoesNotExistException;
 use OCP\Constants;
 use OCP\Files\File;

@@ -6,14 +6,14 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Versions;
+namespace OCA\Repos\Versions;
 
 use OC\User\User;
-use OCA\GroupFolders\Event\GroupVersionsExpireDeleteFileEvent;
-use OCA\GroupFolders\Event\GroupVersionsExpireDeleteVersionEvent;
-use OCA\GroupFolders\Event\GroupVersionsExpireEnterFolderEvent;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Event\GroupVersionsExpireDeleteFileEvent;
+use OCA\Repos\Event\GroupVersionsExpireDeleteVersionEvent;
+use OCA\Repos\Event\GroupVersionsExpireEnterFolderEvent;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\FileInfo;
