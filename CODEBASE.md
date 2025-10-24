@@ -625,28 +625,23 @@ Legacy entry points for Files app integration.
 
 **Purpose:** React to Nextcloud events and provide extension points.
 
+### Status: ⚠️ PARTIALLY UPDATED
+
 ### Event Listeners: `lib/Listeners/`
 
 ##### `lib/Listeners/LoadAdditionalScriptsListener.php`
-**Lines:** ~100+ lines
-**Significance:** 🟡 Important - Frontend loading
+**Updated:** Namespace changed to `OCA\Repos`
 
 Listens to `LoadAdditionalScriptsEvent`:
 - Loads frontend JavaScript/CSS when Files app or sharing UI loads
 - Injects React/Vue bundles into page
 - Provides initial state to frontend
 
-##### `lib/Listeners/CircleDestroyedEventListener.php`
-**Lines:** ~50+ lines
-**Significance:** 🟡 Important - Circle cleanup
-
-Handles circle deletion:
-- Removes folder mappings when circle deleted
-- Prevents orphaned permissions
+##### ~~`lib/Listeners/CircleDestroyedEventListener.php`~~
+**Removed** - Circle integration removed
 
 ##### `lib/Listeners/NodeRenamedListener.php`
-**Lines:** ~75+ lines
-**Significance:** 🟡 Important - Cache invalidation
+**Updated:** Namespace changed to `OCA\Repos`
 
 Listens to `NodeRenamedEvent`:
 - Invalidates ACL cache when files/folders renamed
@@ -655,21 +650,13 @@ Listens to `NodeRenamedEvent`:
 
 ### Custom Events: `lib/Event/`
 
-**Purpose:** Extension points for plugins/customization.
+**Status:** ❌ Expiration events removed
 
-##### `lib/Event/GroupVersionsExpireEnterFolderEvent.php`
-Fired when version expiration enters a folder (allows custom retention policies).
+##### ~~`lib/Event/GroupVersionsExpireEnterFolderEvent.php`~~ - **Removed**
+##### ~~`lib/Event/GroupVersionsExpireDeleteFileEvent.php`~~ - **Removed**
+##### ~~`lib/Event/GroupVersionsExpireDeleteVersionEvent.php`~~ - **Removed**
 
-##### `lib/Event/GroupVersionsExpireDeleteFileEvent.php`
-Fired when file deleted during version expiration.
-
-##### `lib/Event/GroupVersionsExpireDeleteVersionEvent.php`
-Fired when version deleted during expiration.
-
-**Use Case:** Plugins can listen to these events to:
-- Implement custom retention policies
-- Log version deletions
-- Backup versions before deletion
+**Current state:** No custom events remain. Extension points for version expiration removed along with expiration system.
 
 ---
 
@@ -695,70 +682,54 @@ Fired when version deleted during expiration.
 
 **Purpose:** Command-line administration tools (occ commands).
 
-#### Key Files:
+### Status: ⚠️ UPDATED - Namespace changed, expiration commands removed
+
+#### Remaining Commands (namespace updated to OCA\Repos):
 
 ##### `lib/Command/Create.php`
-**Command:** `occ groupfolders:create <mount_point>`
-Creates a new team folder from CLI.
+**Command:** `occ repos:create <mount_point>` (renamed from groupfolders:create)
+Creates a new repository folder from CLI.
 
 ##### `lib/Command/Delete.php`
-**Command:** `occ groupfolders:delete <folder_id>`
-Deletes a team folder.
+**Command:** `occ repos:delete <folder_id>`
+Deletes a repository folder.
 
 ##### `lib/Command/Rename.php`
-**Command:** `occ groupfolders:rename <folder_id> <new_name>`
+**Command:** `occ repos:rename <folder_id> <new_name>`
 Renames folder mount point.
 
 ##### `lib/Command/Scan.php`
-**Command:** `occ groupfolders:scan <folder_id>`
-**Lines:** ~150+ lines
-**Significance:** 🟡 Important - File scan
-
-Scans folder for file changes:
-- Detects new/modified/deleted files
-- Updates file cache
-- Recalculates sizes
-- Shows progress output
+**Command:** `occ repos:scan <folder_id>`
+Scans folder for file changes.
 
 ##### `lib/Command/Quota.php`
-**Command:** `occ groupfolders:quota <folder_id> <quota>`
+**Command:** `occ repos:quota <folder_id> <quota>`
 Sets storage quota for folder.
 
 ##### `lib/Command/Group.php`
-**Command:** `occ groupfolders:group <folder_id> <group> [permissions]`
+**Command:** `occ repos:group <folder_id> <group> [permissions]`
 Manages group assignments and permissions.
 
 ##### `lib/Command/ACL.php`
-**Command:** `occ groupfolders:acl <folder_id> [--enable|--disable]`
+**Command:** `occ repos:acl <folder_id> [--enable|--disable]`
 Enables/disables ACL for folder.
 
 ##### `lib/Command/ListCommand.php`
-**Command:** `occ groupfolders:list`
+**Command:** `occ repos:list`
 Lists all folders with metadata.
 
-##### `lib/Command/ExpireGroupVersions.php`
-**Command:** `occ groupfolders:expire:versions`
-Manually triggers version expiration.
-
-##### `lib/Command/ExpireGroupTrash.php`
-**Command:** `occ groupfolders:expire:trash`
-Manually triggers trash expiration.
-
-##### `lib/Command/ExpireGroupVersionsTrash.php`
-**Command:** `occ groupfolders:expire:all`
-Expires both versions and trash.
-
 ##### `lib/Command/FolderCommand.php`
-**Lines:** ~100+ lines
 Base class for folder commands (shared utilities).
 
-**Usage Pattern:**
-```bash
-occ groupfolders:create "Engineering Team"
-occ groupfolders:group 1 engineering 31  # Read+Write+Delete+Share
-occ groupfolders:quota 1 50GB
-occ groupfolders:scan 1
-```
+#### Removed Commands:
+- ~~`ExpireGroupVersions.php`~~ - Version expiration
+- ~~`ExpireGroupTrash.php`~~ - Trash expiration
+- ~~`ExpireGroupVersionsTrash.php`~~ - Combined expiration
+- ~~`ExpireGroupVersionsPlaceholder.php`~~ - Test command
+- ~~`ExpireGroup/ExpireGroupBase.php`~~ - Base class for expiration
+- ~~`Trashbin/Cleanup.php`~~ - Trashbin cleanup
+
+**Current state:** Core folder management commands remain with updated namespace. All expiration commands removed.
 
 ---
 
@@ -768,65 +739,49 @@ occ groupfolders:scan 1
 
 **Purpose:** Database schema management and migrations.
 
-#### Migration Files:
+### Status: ❌ ALL MIGRATION FILES REMOVED
 
-Migrations are versioned PHP classes that modify database schema:
+**Removed in refactoring** - All historical migration files have been deleted. The database schema remains as established by the final state of migrations, but incremental migration history has been removed.
 
-- **`Version101000Date...php`** - Initial schema
-- **`Version400000Date...php`** - Add ACL support
-- **`Version500000Date...php`** - Add circle support
-- **`Version600000Date...php`** - Add trash metadata
-- **`Version700000Date...php`** - Add version metadata
-- **Version801000Date...php** - Add delegation tables
-- **Version1201000Date...php** - Add user mapping
-- Many more incremental migrations...
+**What was removed:**
+- 22 migration files covering version history from v1.0 to v21.0
+- Examples include:
+  - Initial schema migrations
+  - ACL support additions
+  - Circle support additions (now removed)
+  - Trash metadata additions
+  - Version metadata additions
+  - Delegation table additions
+  - User mapping additions
+- `WrongDefaultQuotaRepairStep.php` - Quota repair step
 
-Each migration:
-- Extends `SimpleMigrationStep`
-- Implements `changeSchema()` method
-- Uses Doctrine Schema API
-- Creates/modifies tables, columns, indexes
+#### Database Schema (Current State):
 
-#### Database Schema:
-
-**Main Tables:**
+**Main Tables still in use:**
 
 1. **`group_folders`** - Folder metadata
    - Columns: `folder_id`, `mount_point`, `quota`, `size`, `acl`
-   - Primary key: `folder_id`
 
-2. **`group_folders_groups`** - Group/circle mappings
-   - Columns: `folder_id`, `group_id`, `circle_id`, `permissions`
-   - Maps folders to groups/circles with permission bitmask
+2. **`group_folders_groups`** - Group mappings (~~circle_id removed~~)
+   - Columns: `folder_id`, `group_id`, `permissions`
 
 3. **`group_folders_acl`** - ACL rules
    - Columns: `rule_id`, `folder_id`, `fileid`, `path`, `mapping_type`, `mapping_id`, `mask`, `permissions`
-   - Stores fine-grained ACL rules
 
 4. **`group_folders_trash`** - Trash items
    - Columns: `trash_id`, `folder_id`, `name`, `original_location`, `deleted_time`
-   - Tracks deleted files
 
 5. **`group_folders_versions`** - File versions
    - Columns: `id`, `file_id`, `timestamp`, `size`, `metadata`
-   - Stores version history
 
 6. **`group_folders_manage`** - ACL managers
    - Columns: `folder_id`, `mapping_type`, `mapping_id`
-   - Users/groups who can manage ACL
 
-7. **`group_folders_applicable`** - (Deprecated, merged into groups table)
+7. **`group_folders_delegation_groups`** - Delegated admin groups
 
-8. **`group_folders_delegation_groups`** - Delegated admin groups
+8. **`group_folders_user_mapping`** - User identity mappings for ACL
 
-9. **`group_folders_delegation_circles`** - Delegated admin circles
-
-10. **`group_folders_user_mapping`** - User identity mappings for ACL
-
-#### Repair Steps:
-
-##### `lib/Migration/WrongDefaultQuotaRepairStep.php`
-Repair step that fixes incorrect quota values from earlier versions.
+**Current state:** Schema remains functional but migration history removed. Future migrations will need to be created for schema changes.
 
 ---
 
