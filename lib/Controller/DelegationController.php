@@ -6,12 +6,12 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Controller;
+namespace OCA\Repos\Controller;
 
 use OCA\Circles\CirclesManager;
-use OCA\GroupFolders\Attribute\RequireGroupFolderAdmin;
-use OCA\GroupFolders\ResponseDefinitions;
-use OCA\GroupFolders\Service\DelegationService;
+use OCA\Repos\Attribute\RequireGroupFolderAdmin;
+use OCA\Repos\ResponseDefinitions;
+use OCA\Repos\Service\DelegationService;
 use OCA\Settings\Service\AuthorizedGroupService;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
@@ -119,8 +119,8 @@ class DelegationController extends OCSController {
 	/**
 	 * Get the list Groups related to classname.
 	 * @param string $classname If the classname is
-	 *                          - OCA\GroupFolders\Settings\Admin : It's reference to fields in Admin Privileges.
-	 *                          - OCA\GroupFolders\Controller\DelegationController : It's just to specific the subadmins.
+	 *                          - OCA\Repos\Settings\Admin : It's reference to fields in Admin Privileges.
+	 *                          - OCA\Repos\Controller\DelegationController : It's just to specific the subadmins.
 	 *                          They can only manage groupfolders in which they are added in the Advanced Permissions (groups only)
 	 *
 	 * @return DataResponse<Http::STATUS_OK, list<GroupFoldersDelegationGroup>, array{}>

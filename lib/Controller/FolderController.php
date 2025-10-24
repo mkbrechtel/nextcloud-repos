@@ -6,17 +6,17 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Controller;
+namespace OCA\Repos\Controller;
 
 use OC\AppFramework\OCS\V1Response;
-use OCA\GroupFolders\Attribute\RequireGroupFolderAdmin;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
-use OCA\GroupFolders\Mount\FolderStorageManager;
-use OCA\GroupFolders\Mount\MountProvider;
-use OCA\GroupFolders\ResponseDefinitions;
-use OCA\GroupFolders\Service\DelegationService;
-use OCA\GroupFolders\Service\FoldersFilter;
+use OCA\Repos\Attribute\RequireGroupFolderAdmin;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Mount\FolderStorageManager;
+use OCA\Repos\Mount\MountProvider;
+use OCA\Repos\ResponseDefinitions;
+use OCA\Repos\Service\DelegationService;
+use OCA\Repos\Service\FoldersFilter;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
