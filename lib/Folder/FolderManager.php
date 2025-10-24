@@ -10,11 +10,6 @@ namespace OCA\GroupFolders\Folder;
 
 use OC\Files\Cache\Cache;
 use OC\Files\Node\Node;
-use OCA\Circles\CirclesManager;
-use OCA\Circles\Exceptions\CircleNotFoundException;
-use OCA\Circles\Model\Circle;
-use OCA\Circles\Model\Member;
-use OCA\Circles\Model\Probes\CircleProbe;
 use OCA\GroupFolders\ACL\UserMapping\IUserMapping;
 use OCA\GroupFolders\ACL\UserMapping\IUserMappingManager;
 use OCA\GroupFolders\ACL\UserMapping\UserMapping;
@@ -44,7 +39,6 @@ use Psr\Log\LoggerInterface;
 
 /**
  * @psalm-import-type GroupFoldersGroup from ResponseDefinitions
- * @psalm-import-type GroupFoldersCircle from ResponseDefinitions
  * @psalm-import-type GroupFoldersUser from ResponseDefinitions
  * @psalm-import-type GroupFoldersAclManage from ResponseDefinitions
  * @psalm-import-type GroupFoldersApplicable from ResponseDefinitions
@@ -347,13 +341,10 @@ class FolderManager {
 	 * @throws Exception
 	 */
 	private function getAllApplicable(): array {
-		$queryHelper = $this->getCirclesManager()?->getQueryHelper();
-
-		$query = $queryHelper?->getQueryBuilder() ?? $this->connection->getQueryBuilder();
-		$query->select('g.folder_id', 'g.group_id', 'g.circle_id', 'g.permissions')
-			->from('group_folders_groups', 'g');
-
-		$queryHelper?->addCircleDetails('g', 'circle_id');
+		$query = $this->connection->getQueryBuilder();
+		$query->select('g.folder_id', 'g.group_id', 'g.permissions')
+			->from('group_folders_groups', 'g')
+			->where($query->expr()->neq('g.group_id', $query->createNamedParameter('')));
 
 		$rows = $query->executeQuery()->fetchAll();
 		$applicableMap = [];
@@ -363,28 +354,12 @@ class FolderManager {
 				$applicableMap[$id] = [];
 			}
 
-			if (!$row['circle_id']) {
-				$entityId = (string)$row['group_id'];
-
-				$entry = [
-					'displayName' => $row['group_id'],
-					'permissions' => (int)$row['permissions'],
-					'type' => 'group',
-				];
-			} else {
-				$entityId = (string)$row['circle_id'];
-				try {
-					$circle = $queryHelper?->extractCircle($row);
-				} catch (CircleNotFoundException) {
-					$circle = null;
-				}
-
-				$entry = [
-					'displayName' => $circle?->getDisplayName() ?? $row['circle_id'],
-					'permissions' => (int)$row['permissions'],
-					'type' => 'circle',
-				];
-			}
+			$entityId = (string)$row['group_id'];
+			$entry = [
+				'displayName' => $row['group_id'],
+				'permissions' => (int)$row['permissions'],
+				'type' => 'group',
+			];
 
 			$applicableMap[$id][$entityId] = $entry;
 		}
@@ -404,36 +379,6 @@ class FolderManager {
 			'gid' => $group->getGID(),
 			'displayname' => $group->getDisplayName(),
 		], array_values(array_filter($groups)));
-	}
-
-	/**
-	 * @return list<GroupFoldersCircle>
-	 * @throws Exception
-	 */
-	private function getCircles(int $id): array {
-		$circles = $this->getAllApplicable()[$id] ?? [];
-		$circles = array_map(fn (string $singleId): ?Circle => $this->getCircle($singleId), array_keys($circles));
-
-		// get nested teams
-		$nested = [];
-		foreach ($circles as $circle) {
-			try {
-				$inherited = $circle?->getInheritedMembers(true) ?? [];
-			} catch (\Exception $e) {
-				$this->logger->notice('could not get nested teams', ['exception' => $e]);
-				continue;
-			}
-			foreach ($inherited as $entry) {
-				if ($entry->getUserType() === Member::TYPE_CIRCLE) {
-					$nested[] = $entry->getBasedOn();
-				}
-			}
-		}
-
-		return array_map(fn (Circle $circle): array => [
-			'sid' => $circle->getSingleId(),
-			'displayname' => $circle->getDisplayName(),
-		], array_values(array_filter(array_merge($circles, $nested))));
 	}
 
 	/**
@@ -494,19 +439,6 @@ class FolderManager {
 	}
 
 	/**
-	 * @return list<GroupFoldersCircle>
-	 * @throws Exception
-	 */
-	public function searchCircles(int $id, string $search = ''): array {
-		$circles = $this->getCircles($id);
-		if ($search === '') {
-			return $circles;
-		}
-
-		return array_values(array_filter($circles, fn (array $circle): bool => (stripos($circle['displayname'], $search) !== false)));
-	}
-
-	/**
 	 * @return list<GroupFoldersUser>
 	 * @throws Exception
 	 */
@@ -524,27 +456,6 @@ class FolderManager {
 							'displayname' => $displayName,
 						];
 					}
-				}
-			}
-		}
-
-		foreach ($this->getCircles($id) as $circleData) {
-			$circle = $this->getCircle($circleData['sid']);
-			if ($circle === null) {
-				continue;
-			}
-
-			foreach ($circle->getInheritedMembers(false) as $member) {
-				if ($member->getUserType() !== Member::TYPE_USER) {
-					continue;
-				}
-
-				$uid = $member->getUserId();
-				if (!isset($users[$uid])) {
-					$users[$uid] = [
-						'uid' => $uid,
-						'displayname' => $member->getDisplayName(),
-					];
 				}
 			}
 		}
@@ -624,55 +535,6 @@ class FolderManager {
 		}, $result));
 	}
 
-	/**
-	 * @return list<FolderDefinitionWithPermissions>
-	 * @throws Exception
-	 */
-	public function getFoldersFromCircleMemberships(IUser $user, ?int $folderId = null): array {
-		$circlesManager = $this->getCirclesManager();
-		if ($circlesManager === null) {
-			return [];
-		}
-
-		try {
-			$federatedUser = $circlesManager->getLocalFederatedUser($user->getUID());
-		} catch (\Exception) {
-			return [];
-		}
-
-		$queryHelper = $circlesManager->getQueryHelper();
-		$query = $this->selectWithFileCache($queryHelper->getQueryBuilder());
-
-		$query->innerJoin(
-			'f',
-			'group_folders_groups',
-			'a',
-			$query->expr()->eq('f.folder_id', 'a.folder_id'),
-		)
-			->selectAlias('a.permissions', 'group_permissions')
-			->where($query->expr()->neq('a.circle_id', $query->createNamedParameter('')));
-
-		if ($folderId !== null) {
-			$query->andWhere($query->expr()->eq('f.folder_id', $query->createNamedParameter($folderId, IQueryBuilder::PARAM_INT)));
-		}
-
-		/** @psalm-suppress RedundantCondition */
-		if (method_exists($queryHelper, 'limitToMemberships')) {
-			$queryHelper->limitToMemberships('a', 'circle_id', $federatedUser);
-		} else {
-			$queryHelper->limitToInheritedMembers('a', 'circle_id', $federatedUser);
-		}
-
-		return array_values(array_map(function (array $row): FolderDefinitionWithPermissions {
-			$folder = $this->rowToFolder($row);
-			return FolderDefinitionWithPermissions::fromFolder(
-				$folder,
-				Cache::cacheEntryFromData($row, $this->mimeTypeLoader),
-				$row['group_permissions']
-			);
-		}, $query->executeQuery()->fetchAll()));
-	}
-
 
 	/**
 	 * @throws Exception
@@ -711,16 +573,10 @@ class FolderManager {
 	public function addApplicableGroup(int $folderId, string $groupId): void {
 		$query = $this->connection->getQueryBuilder();
 
-		if ($this->isACircle($groupId)) {
-			$circleId = $groupId;
-			$groupId = '';
-		}
-
 		$query->insert('group_folders_groups')
 			->values([
 				'folder_id' => $query->createNamedParameter($folderId, IQueryBuilder::PARAM_INT),
 				'group_id' => $query->createNamedParameter($groupId),
-				'circle_id' => $query->createNamedParameter($circleId ?? ''),
 				'permissions' => $query->createNamedParameter(Constants::PERMISSION_ALL),
 			]);
 		$query->executeStatement();
@@ -740,12 +596,7 @@ class FolderManager {
 					'folder_id', $query->createNamedParameter($folderId, IQueryBuilder::PARAM_INT),
 				),
 			)
-			->andWhere(
-				$query->expr()->orX(
-					$query->expr()->eq('group_id', $query->createNamedParameter($groupId)),
-					$query->expr()->eq('circle_id', $query->createNamedParameter($groupId)),
-				),
-			);
+			->andWhere($query->expr()->eq('group_id', $query->createNamedParameter($groupId)));
 		$query->executeStatement();
 
 		$this->eventDispatcher->dispatchTyped(new CriticalActionPerformedEvent('The group "%s" was revoked access to the groupfolder with id %d', [$groupId, $folderId]));
@@ -765,12 +616,7 @@ class FolderManager {
 					'folder_id', $query->createNamedParameter($folderId, IQueryBuilder::PARAM_INT),
 				),
 			)
-			->andWhere(
-				$query->expr()->orX(
-					$query->expr()->eq('group_id', $query->createNamedParameter($groupId)),
-					$query->expr()->eq('circle_id', $query->createNamedParameter($groupId)),
-				),
-			);
+			->andWhere($query->expr()->eq('group_id', $query->createNamedParameter($groupId)));
 
 		$query->executeStatement();
 
@@ -873,24 +719,6 @@ class FolderManager {
 	/**
 	 * @throws Exception
 	 */
-	public function deleteCircle(string $circleId): void {
-		$query = $this->connection->getQueryBuilder();
-
-		$query->delete('group_folders_groups')
-			->where($query->expr()->eq('circle_id', $query->createNamedParameter($circleId)));
-		$query->executeStatement();
-
-		$query = $this->connection->getQueryBuilder();
-		$query->delete('group_folders_acl')
-			->where($query->expr()->eq('mapping_id', $query->createNamedParameter($circleId)))
-			->andWhere($query->expr()->eq('mapping_type', $query->createNamedParameter('circle')));
-		$query->executeStatement();
-	}
-
-
-	/**
-	 * @throws Exception
-	 */
 	public function setFolderACL(int $folderId, bool $acl): void {
 		$query = $this->connection->getQueryBuilder();
 
@@ -917,10 +745,7 @@ class FolderManager {
 	public function getFoldersForUser(IUser $user, ?int $folderId = null): array {
 		$groups = $this->groupManager->getUserGroupIds($user);
 		/** @var list<FolderDefinitionWithPermissions> $folders */
-		$folders = array_merge(
-			$this->getFoldersForGroups($groups, $folderId),
-			$this->getFoldersFromCircleMemberships($user, $folderId),
-		);
+		$folders = $this->getFoldersForGroups($groups, $folderId);
 
 		/** @var array<int, FolderDefinitionWithPermissions> $mergedFolders */
 		$mergedFolders = [];
@@ -955,46 +780,6 @@ class FolderManager {
 		}
 
 		return $permissions;
-	}
-
-	/**
-	 * returns if the groupId is in fact the singleId of an existing Circle
-	 */
-	public function isACircle(string $groupId): bool {
-		return ($this->getCircle($groupId) !== null);
-	}
-
-	/**
-	 * returns the Circle from its single Id, or NULL if not available
-	 */
-	public function getCircle(string $groupId): ?Circle {
-		$circlesManager = $this->getCirclesManager();
-		if ($circlesManager === null) {
-			return null;
-		}
-
-		$circlesManager->startSuperSession();
-		$probe = new CircleProbe();
-		$probe->includeSystemCircles();
-		$probe->includeSingleCircles();
-		try {
-			return $circlesManager->getCircle($groupId, $probe);
-		} catch (CircleNotFoundException) {
-		} catch (\Exception $e) {
-			$this->logger->warning('', ['exception' => $e]);
-		} finally {
-			$circlesManager->stopSession();
-		}
-
-		return null;
-	}
-
-	public function getCirclesManager(): ?CirclesManager {
-		try {
-			return Server::get(CirclesManager::class);
-		} catch (ContainerExceptionInterface|AutoloadNotAllowedException) {
-			return null;
-		}
 	}
 
 	private function getRealQuota(int $quota): int {

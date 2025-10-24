@@ -639,41 +639,20 @@ Legacy entry points for Files app integration.
 
 ## 11. Circle/Team Integration
 
-### Location: Throughout `lib/`, especially `lib/Folder/FolderManager.php`
+### Status: ❌ REMOVED
 
-**Purpose:** Integrates with Nextcloud Circles app for team-based access control.
+**Removed in refactoring** - Circle/Team integration has been completely removed to simplify the codebase to group-based permissions only. Circle support is not needed for the Git/Git-Annex repository app.
 
-#### Key Aspects:
+**What was removed:**
+- `lib/Listeners/CircleDestroyedEventListener.php` (deleted)
+- Circle event listener registration in `Application.php`
+- Circle-related methods from `FolderManager.php`:
+  - `getCircles()`, `searchCircles()`, `getFoldersFromCircleMemberships()`
+  - `deleteCircle()`, `isACircle()`, `getCircle()`, `getCirclesManager()`
+- Database queries with `circle_id` checks
+- Circle search functionality from API endpoints
 
-**Circles App Dependency:**
-- Declared in `appinfo/info.xml`
-- Provides team/group management beyond traditional Nextcloud groups
-
-**Integration Points:**
-
-##### `lib/Folder/FolderManager.php`
-- Uses `CirclesManager` to query circle memberships
-- Combines circle permissions with group permissions
-- Handles circle-to-folder mappings in database
-
-**Database Schema:**
-- `group_folders_groups` table includes `circle_id` column
-- Circles treated similarly to groups for permission calculation
-
-##### `lib/Listeners/CircleDestroyedEventListener.php`
-**Lines:** ~50+ lines
-**Significance:** 🟡 Important - Cleanup on circle deletion
-
-Event listener that:
-- Listens for `CircleDestroyedEvent`
-- Removes folder mappings when circle is deleted
-- Cleans up orphaned permissions
-
-**Benefits of Circles:**
-- More flexible team structures
-- Support for federated teams
-- Advanced membership management
-- Self-service team creation
+**Current state:** The app now uses **group-based access control exclusively**.
 
 ---
 

@@ -35,3 +35,6 @@ Integration with Nextcloud Circles app:
 - Don't worry about implementation functionality now, we are in the refactoring stage
 - Focus on group-based access control only
 - Circle support not planned for repositories app
+
+## Status
+✅ Implemented in commit 6eed8c4e on 2025-10-24
