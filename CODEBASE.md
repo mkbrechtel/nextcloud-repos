@@ -866,24 +866,40 @@ Base class for folder commands (shared utilities).
 
 ### Root-Level Configuration:
 
-| File | Purpose | Category |
-|------|---------|----------|
-| **package.json** | Node.js dependencies, build scripts | Build |
-| **composer.json** | PHP dependencies | Backend |
-| **webpack.js** | Frontend bundling | Build |
-| **tsconfig.json** | TypeScript compilation | Build |
-| **babel.config.js** | JavaScript transpilation | Build |
-| **.eslintrc.js** | JavaScript linting | Code Quality |
-| **.php-cs-fixer.dist.php** | PHP code style | Code Quality |
-| **psalm.xml** | Static analysis | Code Quality |
-| **Makefile** | Build automation | Build |
-| **cypress.config.ts** | E2E testing | Testing |
-| **openapi.json** | API specification | Documentation |
-| **krankerl.toml** | App packaging | Deployment |
-| **.nextcloudignore** | Files excluded from app package | Deployment |
-| **.gitignore** | Git ignore rules | VCS |
-| **LICENSES/** | License files (AGPL-3.0, etc.) | Legal |
-| **.reuse/** | REUSE compliance | Legal |
+### Status: ⚠️ LOCK FILES AND VENDOR-BIN REMOVED
+
+**What was removed:**
+- `composer.lock` - PHP dependency lock file
+- `package-lock.json` - Node.js dependency lock file
+- Entire `vendor-bin/` directory with all development tool configs:
+  - `vendor-bin/cs-fixer/` - PHP CS Fixer configuration
+  - `vendor-bin/phpunit/` - PHPUnit configuration
+  - `vendor-bin/psalm/` - Psalm static analysis configuration
+  - `vendor-bin/rector/` - Rector refactoring tool configuration
+  - `vendor-bin/openapi-extractor/` - OpenAPI extraction tool configuration
+
+**What remains:**
+
+| File | Purpose | Category | Status |
+|------|---------|----------|--------|
+| **package.json** | Node.js dependencies, build scripts | Build | ✅ Kept |
+| **composer.json** | PHP dependencies | Backend | ✅ Kept |
+| **webpack.js** | Frontend bundling | Build | ✅ Kept |
+| **tsconfig.json** | TypeScript compilation | Build | ✅ Kept |
+| **babel.config.js** | JavaScript transpilation | Build | ✅ Kept |
+| **.eslintrc.js** | JavaScript linting | Code Quality | ✅ Kept |
+| **.php-cs-fixer.dist.php** | PHP code style | Code Quality | ✅ Kept |
+| **psalm.xml** | Static analysis | Code Quality | ✅ Kept |
+| **Makefile** | Build automation | Build | ✅ Kept |
+| ~~**cypress.config.ts**~~ | ~~E2E testing~~ | Testing | ❌ Removed |
+| **openapi.json** | API specification | Documentation | ✅ Kept |
+| **krankerl.toml** | App packaging | Deployment | ✅ Kept |
+| **.nextcloudignore** | Files excluded from app package | Deployment | ✅ Kept |
+| **.gitignore** | Git ignore rules | VCS | ✅ Kept |
+| **LICENSES/** | License files (AGPL-3.0, etc.) | Legal | ✅ Kept |
+| **.reuse/** | REUSE compliance | Legal | ✅ Kept |
+
+**Current state:** Lock files will need to be regenerated when dependencies are installed. vendor-bin tools will need to be reconfigured if needed.
 
 ---
 
