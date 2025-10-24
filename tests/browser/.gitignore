@@ -1,0 +1,7 @@
+screenshots/
+html_output/
+__pycache__/
+*.pyc
+.pytest_cache/
+test-results/
+playwright-report/

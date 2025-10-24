@@ -106,6 +106,21 @@ podman exec -it -u www-data nextcloud-repos-dev bash
 
 The source code is mounted into the container, so any changes you make to the code will be immediately reflected in the running Nextcloud instance. You may need to refresh your browser or clear the cache for frontend changes.
 
+### Running Tests
+
+The project includes browser-based integration tests using Playwright:
+
+```bash
+# Run all tests (requires dev server to be running)
+./run-tests.sh
+```
+
+Tests will automatically:
+- Take screenshots (saved to `tests/browser/screenshots/`)
+- Save HTML output (saved to `tests/browser/html_output/`)
+
+For more details, see [tests/browser/README.md](tests/browser/README.md).
+
 The special remote is developed inside the ./git-annex-special-remote folder in Go?!…
 
 ## Issue Reporting
