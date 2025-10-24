@@ -55,6 +55,57 @@ Create a Git-annex special remote that uses the existing Nextclouds Oauth authen
 
 For the early development our primary environment target is the latest Nextcloud stable release packaged into a Podman container. The source code is mounted into the container to be able to live edit the app code and see the results directly.
 
+### Prerequisites
+
+- [Podman](https://podman.io/)
+- Git
+
+### Starting the Development Server
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://codeberg.org/mkbrechtel/nextcloud-repos.git
+   cd nextcloud-repos
+   ```
+
+2. **Start the development server:**
+   ```bash
+   ./start-dev-server.sh
+   ```
+
+   This script will:
+   - Build a Nextcloud 32 container with git, git-annex, and datalad
+   - Mount the source code into the container for live editing
+   - Enable the repos app automatically
+   - Start the server on http://localhost:8080
+
+3. **Access Nextcloud:**
+   - URL: http://localhost:8080
+   - Admin username: `admin`
+   - Admin password: `admin`
+
+### Development Commands
+
+```bash
+# Run occ commands (using the wrapper script)
+./occ.sh repos:list
+./occ.sh app:list
+./occ.sh repos:create my-repo
+
+# View container logs
+podman logs -f nextcloud-repos-dev
+
+# Stop the development server
+podman stop nextcloud-repos-dev
+
+# Access the container shell
+podman exec -it -u www-data nextcloud-repos-dev bash
+```
+
+### Live Development
+
+The source code is mounted into the container, so any changes you make to the code will be immediately reflected in the running Nextcloud instance. You may need to refresh your browser or clear the cache for frontend changes.
+
 The special remote is developed inside the ./git-annex-special-remote folder in Go?!…
 
 ## Issue Reporting
