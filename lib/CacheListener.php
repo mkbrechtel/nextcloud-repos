@@ -5,10 +5,10 @@ declare(strict_types=1);
  * SPDX-FileCopyrightText: 2019 Nextcloud GmbH and Nextcloud contributors
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
-namespace OCA\GroupFolders;
+namespace OCA\Repos;
 
 use OC\Files\Storage\Wrapper\Jail;
-use OCA\GroupFolders\Mount\GroupFolderStorage;
+use OCA\Repos\Mount\GroupFolderStorage;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\Cache\CacheEntryInsertedEvent;
 use OCP\Files\Cache\CacheEntryUpdatedEvent;

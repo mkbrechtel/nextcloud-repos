@@ -7,7 +7,17 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 This document provides a comprehensive analysis of the Nextcloud Repositories app codebase, organized by functional categories. **Note: This codebase has been forked from the Team Folders app (formerly "Group Folders") and is being refactored to create Git/Git-Annex/Datalad repository integration.**
 
-**Refactoring Status:** A comprehensive refactoring plan has been created in the `issues/` directory, with 20 issue files documenting the strategy for converting this app to the Repositories app. See `issues/README.md` for details. **The app has been renamed from 'groupfolders' to 'repos' with namespace OCA\Repos.**
+**Refactoring Status:** A comprehensive refactoring plan has been created in the `issues/` directory, with 20 issue files documenting the strategy for converting this app to the Repositories app. See `issues/README.md` for details.
+
+**Major Changes Completed:**
+- ✅ App renamed from 'groupfolders' to 'repos' (App ID, display name)
+- ✅ All PHP namespaces updated from `OCA\GroupFolders` to `OCA\Repos` (Issues 01-10, 12, 14)
+- ❌ Circle/Team integration removed completely (Issue 11)
+- ❌ Testing infrastructure removed (Issue 16)
+- ❌ CI/CD workflows removed (Issue 17)
+- ⚠️ Localization reduced to German only (Issue 18)
+- ❌ Background jobs removed (Issue 13)
+- ❌ Admin Settings UI removed (Issue 09)
 
 **App Information:**
 - **App ID:** `repos` (renamed from `groupfolders`)

@@ -6,11 +6,11 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders;
+namespace OCA\Repos;
 
 use Exception;
-use OCA\GroupFolders\Attribute\RequireGroupFolderAdmin;
-use OCA\GroupFolders\Service\DelegationService;
+use OCA\Repos\Attribute\RequireGroupFolderAdmin;
+use OCA\Repos\Service\DelegationService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
