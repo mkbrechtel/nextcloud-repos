@@ -712,37 +712,17 @@ Fired when version deleted during expiration.
 
 ## 13. Background Jobs
 
-### Location: `lib/BackgroundJob/`
+### Status: ❌ REMOVED
 
-**Purpose:** Periodic maintenance tasks executed by Nextcloud cron.
+**Removed in refactoring** - All expiration background jobs have been deleted. These were specific to the old versioning and trash expiration system.
 
-#### Key Files:
+**What was removed:**
+- `lib/BackgroundJob/ExpireGroupVersions.php` - Version expiration job
+- `lib/BackgroundJob/ExpireGroupTrash.php` - Trash expiration job
+- `lib/BackgroundJob/ExpireGroupPlaceholder.php` - Placeholder/test job
+- Background job registrations in `appinfo/info.xml`
 
-##### `lib/BackgroundJob/ExpireGroupVersions.php`
-**Lines:** ~100+ lines
-**Significance:** 🟡 Important - Version cleanup
-
-Periodic job (runs hourly) that:
-- Expires old file versions based on retention policy
-- Frees up storage space
-- Uses `GroupVersionsExpireManager`
-
-##### `lib/BackgroundJob/ExpireGroupTrash.php`
-**Lines:** ~100+ lines
-**Significance:** 🟡 Important - Trash cleanup
-
-Periodic job that:
-- Deletes old trash items (30+ days by default)
-- Permanently removes deleted files
-- Reclaims storage
-
-##### `lib/BackgroundJob/ExpireGroupPlaceholder.php`
-Placeholder/test background job.
-
-**Configuration:**
-- Registered in `appinfo/info.xml`
-- Execution frequency controlled by Nextcloud cron settings
-- Can be manually triggered via occ commands
+**Current state:** No background jobs. Will need to be recreated if the Repositories app requires periodic maintenance tasks (e.g., Git garbage collection, repo cleanup, etc.).
 
 ---
 
