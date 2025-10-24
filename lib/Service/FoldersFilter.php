@@ -6,9 +6,9 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Service;
+namespace OCA\Repos\Service;
 
-use OCA\GroupFolders\ResponseDefinitions;
+use OCA\Repos\ResponseDefinitions;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 

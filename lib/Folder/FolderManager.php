@@ -6,17 +6,17 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Folder;
+namespace OCA\Repos\Folder;
 
 use OC\Files\Cache\Cache;
 use OC\Files\Node\Node;
-use OCA\GroupFolders\ACL\UserMapping\IUserMapping;
-use OCA\GroupFolders\ACL\UserMapping\IUserMappingManager;
-use OCA\GroupFolders\ACL\UserMapping\UserMapping;
-use OCA\GroupFolders\AppInfo\Application;
-use OCA\GroupFolders\Mount\FolderStorageManager;
-use OCA\GroupFolders\Mount\GroupMountPoint;
-use OCA\GroupFolders\ResponseDefinitions;
+use OCA\Repos\ACL\UserMapping\IUserMapping;
+use OCA\Repos\ACL\UserMapping\IUserMappingManager;
+use OCA\Repos\ACL\UserMapping\UserMapping;
+use OCA\Repos\AppInfo\Application;
+use OCA\Repos\Mount\FolderStorageManager;
+use OCA\Repos\Mount\GroupMountPoint;
+use OCA\Repos\ResponseDefinitions;
 use OCP\AutoloadNotAllowedException;
 use OCP\Constants;
 use OCP\DB\Exception;

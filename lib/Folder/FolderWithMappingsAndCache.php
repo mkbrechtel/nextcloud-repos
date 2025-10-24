@@ -6,9 +6,9 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Folder;
+namespace OCA\Repos\Folder;
 
-use OCA\GroupFolders\ResponseDefinitions;
+use OCA\Repos\ResponseDefinitions;
 use OCP\Files\Cache\ICacheEntry;
 
 /**

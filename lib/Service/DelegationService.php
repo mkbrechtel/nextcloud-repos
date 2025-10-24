@@ -6,11 +6,11 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Service;
+namespace OCA\Repos\Service;
 
 use OC\Settings\AuthorizedGroupMapper;
-use OCA\GroupFolders\Controller\DelegationController;
-use OCA\GroupFolders\Settings\Admin;
+use OCA\Repos\Controller\DelegationController;
+use OCA\Repos\Settings\Admin;
 use OCP\IGroupManager;
 use OCP\IUserSession;
 
