@@ -945,36 +945,22 @@ Repair step that fixes incorrect quota values from earlier versions.
 
 ## 18. Localization
 
-### Location: `l10n/`
+### Status: ⚠️ REDUCED TO GERMAN ONLY
 
-**Purpose:** Multi-language support for UI strings.
+**Removed in refactoring** - Only German localization files have been kept. All other language files and translation infrastructure removed.
 
-#### Files:
+**What was removed:**
+- 90+ language files (all `.js` and `.json` files except `de.js` and `de.json`)
+- Languages removed include: English (GB), French, Spanish, Italian, Japanese, Chinese, Russian, etc.
+- `.tx/config` - Transifex project configuration
+- `.l10nignore` - Translation exclusion rules
+- Translation workflow automation
 
-60+ language JSON files:
-- `de.json` - German
-- `fr.json` - French
-- `it.json` - Italian
-- `es.json` - Spanish
-- `ja.json` - Japanese
-- `zh_CN.json` - Chinese (Simplified)
-- And many more...
+**What remains:**
+- `l10n/de.js` and `l10n/de.json` - German translations only
+- `translationfiles/` directory (if present)
 
-#### Translation Workflow:
-
-1. **Source Strings:** Defined in code using `t()` function
-2. **Extraction:** Strings extracted to translation templates
-3. **Transifex:** Translations managed on Transifex platform
-4. **Import:** Translated files imported via CI workflow
-5. **Distribution:** Included in app releases
-
-#### Configuration:
-
-- **`.tx/config`** - Transifex project configuration
-- **`.l10nignore`** - Files excluded from translation
-- **`translationfiles/`** - Translation templates
-
-**Workflow Automation:** `.github/workflows/` includes Transifex sync
+**Current state:** Single language support (German). Multi-language support will need to be added back later if needed for the Repositories app.
 
 ---
 

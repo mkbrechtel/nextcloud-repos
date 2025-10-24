@@ -40,3 +40,6 @@ Multi-language support:
 - Remove Transifex integration
 - Don't worry about implementation functionality now, we are in the refactoring stage
 - Translation strings will need updating for repository terminology
+
+## Status
+✅ Implemented in commit 3cabee7a on 2025-10-24
