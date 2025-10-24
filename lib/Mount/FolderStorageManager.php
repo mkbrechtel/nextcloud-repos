@@ -6,17 +6,17 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Mount;
+namespace OCA\Repos\Mount;
 
 use OC\Files\Cache\Cache;
 use OC\Files\ObjectStore\ObjectStoreStorage;
 use OC\Files\ObjectStore\PrimaryObjectStoreConfig;
 use OC\Files\Storage\Local;
 use OC\Files\Storage\Wrapper\Jail;
-use OCA\GroupFolders\ACL\ACLManagerFactory;
-use OCA\GroupFolders\ACL\ACLStorageWrapper;
-use OCA\GroupFolders\AppInfo\Application;
-use OCA\GroupFolders\Folder\FolderDefinition;
+use OCA\Repos\ACL\ACLManagerFactory;
+use OCA\Repos\ACL\ACLStorageWrapper;
+use OCA\Repos\AppInfo\Application;
+use OCA\Repos\Folder\FolderDefinition;
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;
 use OCP\Files\NotFoundException;

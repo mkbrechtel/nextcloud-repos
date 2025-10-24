@@ -6,13 +6,13 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Mount;
+namespace OCA\Repos\Mount;
 
 use OC\Files\Cache\Scanner;
 use OC\Files\ObjectStore\ObjectStoreScanner;
 use OC\Files\ObjectStore\ObjectStoreStorage;
 use OC\Files\Storage\Wrapper\Quota;
-use OCA\GroupFolders\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinition;
 use OCP\Files\Cache\ICache;
 use OCP\Files\Cache\ICacheEntry;
 use OCP\Files\Cache\IScanner;

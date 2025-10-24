@@ -6,10 +6,10 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Mount;
+namespace OCA\Repos\Mount;
 
 use OC\Files\Storage\Wrapper\Wrapper;
-use OCA\GroupFolders\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinition;
 use OCP\Constants;
 use OCP\Files\Cache\ICache;
 use OCP\Files\Storage\IStorage;

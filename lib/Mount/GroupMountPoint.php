@@ -6,12 +6,12 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Mount;
+namespace OCA\Repos\Mount;
 
 use OC\Files\Mount\MountPoint;
 use OC\Files\Storage\Storage;
 use OC\Files\Storage\Wrapper\Jail;
-use OCA\GroupFolders\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinition;
 use OCP\Files\Mount\IShareOwnerlessMount;
 use OCP\Files\Mount\ISystemMountPoint;
 use OCP\Files\Storage\IStorage;

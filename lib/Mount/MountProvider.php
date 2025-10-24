@@ -6,14 +6,14 @@ declare (strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Mount;
+namespace OCA\Repos\Mount;
 
 use OC\Files\Storage\Wrapper\PermissionsMask;
-use OCA\GroupFolders\ACL\ACLManager;
-use OCA\GroupFolders\ACL\ACLManagerFactory;
-use OCA\GroupFolders\Folder\FolderDefinition;
-use OCA\GroupFolders\Folder\FolderDefinitionWithPermissions;
-use OCA\GroupFolders\Folder\FolderManager;
+use OCA\Repos\ACL\ACLManager;
+use OCA\Repos\ACL\ACLManagerFactory;
+use OCA\Repos\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\FolderManager;
 use OCP\Constants;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Cache\ICacheEntry;
