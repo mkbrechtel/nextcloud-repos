@@ -12,10 +12,6 @@ webpackConfig.entry = {
 	files: [
 		'./src/files.js',
 	],
-	settings: [
-		'whatwg-fetch',
-		'./src/settings/index.tsx',
-	],
 }
 
 webpackConfig.resolve.extensions = [...webpackConfig.resolve.extensions, '.jsx', '.ts', '.tsx']

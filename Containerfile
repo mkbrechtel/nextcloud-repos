@@ -60,11 +60,26 @@ RUN playwright install chromium
 ENV PW_TEST_HTML_REPORT_OPEN=never
 WORKDIR /var/www/html/custom_apps/repos
 
+FROM node:20-bookworm-slim as app-build
+
+WORKDIR /build
+
+COPY package.json package-lock.json ./
+RUN npm install
+
+COPY webpack.js babel.config.js .babelrc.js tsconfig.json .eslintrc.js ./
+COPY src ./src
+COPY img ./img
+
+RUN npm run build
+
 FROM server-base as dev-env
 
 RUN mkdir -p /var/www/html/custom_apps && \
     chown -R www-data:www-data /var/www/html/custom_apps
 
 COPY --chown=www-data:www-data . /var/www/html/custom_apps/repos
+
+COPY --from=app-build --chown=www-data:www-data /build/js /var/www/html/custom_apps/repos/js
 
 RUN php occ app:enable repos

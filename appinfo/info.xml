@@ -46,11 +46,6 @@
 		<command>OCA\Repos\Command\Scan</command>
 	</commands>
 
-	<settings>
-		<admin>OCA\Repos\Settings\Admin</admin>
-		<admin-section>OCA\Repos\Settings\Section</admin-section>
-	</settings>
-
 	<sabre>
 		<collections>
 			<collection>OCA\Repos\DAV\RootCollection</collection>

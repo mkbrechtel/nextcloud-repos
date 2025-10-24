@@ -42,6 +42,6 @@ class RootCollection extends AbstractPrincipalCollection {
 	}
 
 	public function getName(): string {
-		return 'groupfolders';
+		return 'repos';
 	}
 }

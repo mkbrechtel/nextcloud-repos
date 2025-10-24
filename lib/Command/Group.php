@@ -58,17 +58,17 @@ class Group extends FolderCommand {
 		$groupString = $input->getArgument('group');
 		$group = $this->groupManager->get($groupString);
 		if ($input->getOption('delete')) {
-			$this->folderManager->removeApplicableGroup($folder->id, $groupString);
+			$this->repoManager->removeGroupFromRepo($folder['id'], $groupString);
 			return 0;
-		} elseif ($group || $this->folderManager->isACircle($groupString)) {
+		} elseif ($group) {
 			$permissionsString = $input->getArgument('permissions');
 			$permissions = $this->getNewPermissions($permissionsString);
 			if ($permissions) {
-				if (!isset($folder->groups[$groupString])) {
-					$this->folderManager->addApplicableGroup($folder->id, $groupString);
+				if (!isset($folder['groups'][$groupString])) {
+					$this->repoManager->addGroupToRepo($folder['id'], $groupString, $permissions);
+				} else {
+					$this->repoManager->setGroupPermissions($folder['id'], $groupString, $permissions);
 				}
-
-				$this->folderManager->setGroupPermissions($folder->id, $groupString, $permissions);
 
 				return 0;
 			}
@@ -78,7 +78,7 @@ class Group extends FolderCommand {
 			return -1;
 		}
 
-		$output->writeln('<error>group/team not found: ' . $groupString . '</error>');
+		$output->writeln('<error>group not found: ' . $groupString . '</error>');
 
 		return -1;
 	}
