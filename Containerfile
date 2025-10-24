@@ -60,22 +60,62 @@ RUN playwright install chromium
 ENV PW_TEST_HTML_REPORT_OPEN=never
 WORKDIR /var/www/html/custom_apps/repos
 
-FROM node:20-bookworm-slim as app-build
+FROM debian:trixie as app-build
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends make && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends \
+    nodejs \
+    npm \
+    make \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install yarn via corepack (Yarn 1.x to match our lockfile)
+RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
 WORKDIR /build
 
-COPY package.json package-lock.json ./
-RUN npm install
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
 
 COPY rollup.config.js babel.config.cjs .babelrc.cjs tsconfig.json .eslintrc.js ./
 COPY src ./src
 COPY img ./img
 
-RUN npm run dev
+RUN yarn build
+
+FROM debian:trixie as prepare-app-release
+
+# Install REUSE tool for license compliance checking
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends reuse && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /source
+
+# Copy all source files to run REUSE lint
+COPY . .
+
+# Run REUSE compliance check
+RUN reuse lint
+
+# Prepare clean release directory
+WORKDIR /release
+
+# Copy only the necessary files for release (exclude dev/build files)
+COPY appinfo ./appinfo
+COPY css ./css
+COPY img ./img
+COPY l10n ./l10n
+COPY lib ./lib
+COPY templates ./templates
+COPY LICENSES ./LICENSES
+COPY .reuse ./.reuse
+
+# Copy built JavaScript from app-build stage
+COPY --from=app-build /build/js ./js
+
+# Create release tarball
+RUN tar -czf /repos-release.tar.gz -C /release .
 
 FROM server-base as dev-env
 

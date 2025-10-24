@@ -21,7 +21,7 @@
 		"test:unit": "phpunit -c tests/phpunit.xml",
 		"test:unit:coverage": "XDEBUG_MODE=coverage phpunit -c tests/phpunit.xml",
 		"rector": "rector && composer cs:fix",
-		"openapi": "generate-spec && npm run typescript:generate"
+		"openapi": "generate-spec && yarn typescript:generate"
 	},
 	"config": {
 		"allow-plugins": {

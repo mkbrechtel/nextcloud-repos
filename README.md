@@ -106,6 +106,13 @@ podman exec -it -u www-data nextcloud-repos-dev bash
 
 The source code is mounted into the container, so any changes you make to the code will be immediately reflected in the running Nextcloud instance. You may need to refresh your browser or clear the cache for frontend changes.
 
+### Building Releases
+
+```bash
+# Build release tarball with REUSE compliance check
+./build-release.sh
+```
+
 ### Running Tests
 
 The project includes browser-based integration tests using Playwright:

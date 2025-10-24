@@ -1,5 +1,7 @@
 {
   "name": "repos",
+  "version": "0.0.0-dev.0",
+  "license": "AGPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "build": "NODE_ENV=production rollup -c",
@@ -9,13 +11,16 @@
     "lint:fix": "eslint --ext .js,.vue,.tsx,.ts src --fix",
     "stylelint": "stylelint css/*.css css/*.scss src/**/*.scss src/**/*.vue",
     "stylelint:fix": "stylelint css/*.css css/*.scss src/**/*.scss src/**/*.vue --fix",
-    "typescript:generate": "npx openapi-typescript ./openapi.json -t -o src/types/openapi/openapi.ts"
+    "typescript:generate": "yarn openapi-typescript ./openapi.json -t -o src/types/openapi/openapi.ts"
   },
   "engines": {
     "node": "^20.0.0",
-    "npm": "^10.0.0"
+    "yarn": "^1.22.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
+    "@babel/preset-env": "^7.28.5",
     "@babel/preset-react": "^7.27.1",
     "@nextcloud/babel-config": "^1.2.0",
     "@nextcloud/browserslist-config": "^3.0.1",
@@ -29,11 +34,13 @@
     "@rollup/plugin-replace": "^6.0.2",
     "@rollup/plugin-terser": "^0.4.4",
     "@rollup/plugin-typescript": "^12.1.1",
+    "@types/node": "^24.9.1",
     "@types/react": "^17.0.43",
     "@types/react-dom": "^17.0.0",
     "@vue/tsconfig": "^0.5.1",
     "eslint-plugin-react": "^7.37.5",
     "openapi-typescript": "^7.9.1",
+    "postcss": "^8.5.6",
     "rollup": "^4.30.1",
     "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-vue": "^5.1.9",
@@ -64,6 +71,5 @@
     "vue-template-compiler": "^2.7.16",
     "webdav": "^5.8.0",
     "whatwg-fetch": "^3.6.20"
-  },
-  "version": "21.0.0-dev.1"
+  }
 }
