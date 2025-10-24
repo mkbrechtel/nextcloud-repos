@@ -6,17 +6,17 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Command;
+namespace OCA\Repos\Command;
 
-use OCA\GroupFolders\ACL\ACLManagerFactory;
-use OCA\GroupFolders\ACL\Rule;
-use OCA\GroupFolders\ACL\RuleManager;
-use OCA\GroupFolders\ACL\UserMapping\UserMapping;
-use OCA\GroupFolders\Folder\FolderDefinitionWithPermissions;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
-use OCA\GroupFolders\Mount\FolderStorageManager;
-use OCA\GroupFolders\Mount\MountProvider;
+use OCA\Repos\ACL\ACLManagerFactory;
+use OCA\Repos\ACL\Rule;
+use OCA\Repos\ACL\RuleManager;
+use OCA\Repos\ACL\UserMapping\UserMapping;
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Mount\FolderStorageManager;
+use OCA\Repos\Mount\MountProvider;
 use OCP\Constants;
 use OCP\Files\IRootFolder;
 use OCP\IUserManager;

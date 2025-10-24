@@ -6,12 +6,12 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Command;
+namespace OCA\Repos\Command;
 
 use OC\Core\Command\Base;
-use OCA\GroupFolders\Folder\FolderDefinition;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
 use OCP\Constants;
 use OCP\IGroupManager;
 use OCP\IUserManager;

@@ -6,13 +6,13 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\Command;
+namespace OCA\Repos\Command;
 
 use OC\Core\Command\Base;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Folder\FolderWithMappingsAndCache;
-use OCA\GroupFolders\Mount\FolderStorageManager;
-use OCA\GroupFolders\Mount\MountProvider;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\FolderWithMappingsAndCache;
+use OCA\Repos\Mount\FolderStorageManager;
+use OCA\Repos\Mount\MountProvider;
 use OCP\Files\IRootFolder;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
