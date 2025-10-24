@@ -889,95 +889,28 @@ Repair step that fixes incorrect quota values from earlier versions.
 
 ## 16. Testing Infrastructure
 
-### Location: `tests/`, `cypress/`
+### Status: ❌ REMOVED
 
-**Purpose:** Unit tests, integration tests, and end-to-end tests.
+**Removed in refactoring** - All testing infrastructure has been completely removed to streamline the codebase. Tests will need to be rebuilt from scratch as the app is redesigned for Git/Git-Annex integration.
 
-### 16.1 Unit Tests: `tests/`
+**What was removed:**
 
-**Framework:** PHPUnit
-**Configuration:** `tests/phpunit.xml`
+### Unit Tests (PHPUnit):
+- Entire `tests/` directory (135 files deleted)
+- All test cases for ACL, Folder Manager, Listeners, Trash, etc.
+- 80+ stub files mocking Nextcloud core, Circles, Files app
+- `tests/phpunit.xml` configuration
+- `tests/psalm-baseline.xml`
 
-#### Test Structure:
+### End-to-End Tests (Cypress):
+- Entire `cypress/` directory
+- E2E tests for groupfolders, sharing, encryption
+- Version management test suites (7 test files)
+- Test utilities and support files
+- `cypress.config.ts` configuration
+- `cypress/docker-compose.yml`
 
-##### `tests/ACL/`
-Tests for ACL system:
-- **`RuleTest.php`** - ACL rule data structure tests
-- **`RuleManagerTest.php`** - Database operations
-- **`ACLManagerTest.php`** - Permission evaluation logic
-- **`ACLStorageWrapperTest.php`** - Storage wrapper integration
-- **`ACLCacheWrapperTest.php`** - Cache behavior
-- **`ACLScannerTest.php`** - File scanning with ACL
-
-##### `tests/Folder/`
-- **`FolderManagerTest.php`** - Core folder management tests
-
-##### `tests/Listeners/`
-- **`NodeRenamedListenerTest.php`** - Rename event handling
-- **`LoadAdditionalScriptsListenerTest.php`** - Frontend loading
-- **`CircleDestroyedEventListenerTest.php`** - Circle deletion
-
-##### `tests/Trash/`
-- **`TrashBackendTest.php`** - Trash functionality
-
-##### `tests/AppInfo/`
-- **`CapabilitiesTest.php`** - Capabilities API
-
-#### Test Stubs: `tests/stubs/`
-
-80+ stub files mocking external dependencies:
-- Nextcloud core classes
-- Symfony components
-- Doctrine ORM
-- Circles app
-- Files app
-
-**Purpose:** Allow unit testing without full Nextcloud environment.
-
-### 16.2 End-to-End Tests: `cypress/`
-
-**Framework:** Cypress
-**Configuration:** `cypress.config.ts`
-
-#### E2E Test Suites:
-
-##### `cypress/e2e/groupfolders.cy.ts`
-**Lines:** ~500+ lines
-**Significance:** 🔴 Critical - Main E2E tests
-
-Tests core functionality:
-- Folder creation/deletion
-- Group assignment
-- Permission management
-- ACL functionality
-- Quota enforcement
-
-##### `cypress/e2e/sharing.cy.ts`
-Tests file sharing within group folders.
-
-##### `cypress/e2e/encryption.cy.ts`
-Tests encryption integration.
-
-##### `cypress/e2e/files_versions/`
-Comprehensive versioning tests:
-- **`version_creation.cy.ts`** - Version creation on file edit
-- **`version_restoration.cy.ts`** - Restoring previous versions
-- **`version_deletion.cy.ts`** - Deleting versions
-- **`version_download.cy.ts`** - Downloading specific versions
-- **`version_expiration.cy.ts`** - Version expiration logic
-- **`version_cross_storage_move.cy.ts`** - Moving files between storages
-- **`version_naming.cy.ts`** - Version naming conventions
-- **`filesVersionsUtils.ts`** - Shared version test utilities
-
-##### `cypress/e2e/files/filesUtils.ts`
-Utilities for file operations in tests.
-
-##### `cypress/support/`
-- **`e2e.ts`** - E2E setup and configuration
-- **`commands.ts`** - Custom Cypress commands
-
-##### `cypress/docker-compose.yml`
-Docker environment for running E2E tests locally.
+**Current state:** No test infrastructure. Will need to be rebuilt for the new Repositories app functionality.
 
 ---
 
