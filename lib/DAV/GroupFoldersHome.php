@@ -6,11 +6,11 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\DAV;
+namespace OCA\Repos\DAV;
 
 use OC\Files\Filesystem;
-use OCA\GroupFolders\Folder\FolderDefinition;
-use OCA\GroupFolders\Folder\FolderManager;
+use OCA\Repos\Folder\FolderDefinition;
+use OCA\Repos\Folder\FolderManager;
 use OCP\Files\IRootFolder;
 use OCP\IUser;
 use RuntimeException;

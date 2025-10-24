@@ -6,7 +6,7 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\DAV;
+namespace OCA\Repos\DAV;
 
 use OCP\Files\Folder;
 use OCP\Files\IRootFolder;

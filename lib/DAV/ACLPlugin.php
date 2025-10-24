@@ -6,15 +6,15 @@ declare(strict_types=1);
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
-namespace OCA\GroupFolders\DAV;
+namespace OCA\Repos\DAV;
 
 use OCA\DAV\Connector\Sabre\Node;
-use OCA\GroupFolders\ACL\ACLManagerFactory;
-use OCA\GroupFolders\ACL\Rule;
-use OCA\GroupFolders\ACL\RuleManager;
-use OCA\GroupFolders\ACL\UserMapping\IUserMapping;
-use OCA\GroupFolders\Folder\FolderManager;
-use OCA\GroupFolders\Mount\GroupMountPoint;
+use OCA\Repos\ACL\ACLManagerFactory;
+use OCA\Repos\ACL\Rule;
+use OCA\Repos\ACL\RuleManager;
+use OCA\Repos\ACL\UserMapping\IUserMapping;
+use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Mount\GroupMountPoint;
 use OCP\Constants;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IL10N;
