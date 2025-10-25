@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\Repos\DAV;
 
-use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCP\Files\IRootFolder;
 use OCP\IUserSession;
 use Sabre\DAVACL\AbstractPrincipalCollection;
@@ -18,7 +18,7 @@ class RootCollection extends AbstractPrincipalCollection {
 	public function __construct(
 		private readonly IUserSession $userSession,
 		PrincipalBackend\BackendInterface $principalBackend,
-		private readonly FolderManager $folderManager,
+		private readonly RepoManager $repoManager,
 		private readonly IRootFolder $rootFolder,
 	) {
 		parent::__construct($principalBackend, 'principals/users');
@@ -38,7 +38,7 @@ class RootCollection extends AbstractPrincipalCollection {
 			throw new \Sabre\DAV\Exception\Forbidden();
 		}
 
-		return new GroupFoldersHome($principalInfo, $this->folderManager, $this->rootFolder, $user);
+		return new GroupFoldersHome($principalInfo, $this->repoManager, $this->rootFolder, $user);
 	}
 
 	public function getName(): string {

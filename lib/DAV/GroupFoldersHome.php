@@ -10,7 +10,7 @@ namespace OCA\Repos\DAV;
 
 use OC\Files\Filesystem;
 use OCA\Repos\Folder\FolderDefinition;
-use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCP\Files\IRootFolder;
 use OCP\IUser;
 use RuntimeException;
@@ -21,7 +21,7 @@ use Sabre\DAV\ICollection;
 class GroupFoldersHome implements ICollection {
 	public function __construct(
 		private array $principalInfo,
-		private readonly FolderManager $folderManager,
+		private readonly RepoManager $repoManager,
 		private readonly IRootFolder $rootFolder,
 		private readonly IUser $user,
 	) {
@@ -57,7 +57,7 @@ class GroupFoldersHome implements ICollection {
 			return null;
 		}
 
-		$folders = $this->folderManager->getFoldersForUser($this->user);
+		$folders = $this->repoManager->getFoldersForUser($this->user);
 		foreach ($folders as $folder) {
 			if (basename($folder->mountPoint) === $name) {
 				return $folder;
@@ -97,7 +97,7 @@ class GroupFoldersHome implements ICollection {
 			return [];
 		}
 
-		$folders = $this->folderManager->getFoldersForUser($this->user);
+		$folders = $this->repoManager->getFoldersForUser($this->user);
 
 		// Filter out non top-level folders
 		$folders = array_filter($folders, function (FolderDefinition $folder) {
