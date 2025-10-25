@@ -44,6 +44,7 @@
 		<command>OCA\Repos\Command\Rename</command>
 		<command>OCA\Repos\Command\Delete</command>
 		<command>OCA\Repos\Command\Scan</command>
+		<command>OCA\Repos\Command\ConfigReposDir</command>
 	</commands>
 
 	<sabre>
