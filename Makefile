@@ -122,12 +122,16 @@ test-php:  ## Run PHP unit tests with PHPUnit
 
 ##@ Build & Release
 
-build:  ## Build frontend assets (JavaScript/CSS)
-	@echo "Installing dependencies..."
-	yarn install
-	@echo "Building frontend..."
-	yarn build
+build:  ## Build frontend assets (JavaScript/CSS) using Containerfile
+	@echo "Building frontend assets using Containerfile..."
+	podman build --target frontend-build -t localhost/nextcloud-repos:frontend-build -f Containerfile .
+	@echo "Extracting built assets..."
+	-rm -rf js/
+	@CONTAINER_ID=$$(podman create localhost/nextcloud-repos:frontend-build) && \
+	podman cp "$$CONTAINER_ID:/build/js" ./js && \
+	podman rm "$$CONTAINER_ID"
 	@echo "✓ Frontend build completed!"
+	@echo "  Output: js/"
 
 release:  ## Build release tarball with REUSE compliance check
 	@echo "Building release package with REUSE compliance check..."
