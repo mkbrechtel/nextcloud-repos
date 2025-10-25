@@ -12,6 +12,17 @@ PHP_TEST_IMAGE_NAME = nextcloud-repos:php-test
 RELEASE_IMAGE_NAME = nextcloud-repos:release
 RELEASE_FILE = repos-release.tar.gz
 
+# Function to extract assets from container image
+# Usage: $(call extract-from-image,image-name,source-path,dest-path)
+# Example: $(call extract-from-image,myimage:latest,/build/js,./js)
+define extract-from-image
+	@echo "Extracting $(2) from image $(1)..."
+	@CONTAINER_ID=$$(podman create $(1)) && \
+	podman cp "$$CONTAINER_ID:$(2)" $(3) && \
+	podman rm "$$CONTAINER_ID"
+	@echo "✓ Extracted to: $(3)"
+endef
+
 # Default target
 .DEFAULT_GOAL := help
 
@@ -125,11 +136,8 @@ test-php:  ## Run PHP unit tests with PHPUnit
 build:  ## Build frontend assets (JavaScript/CSS) using Containerfile
 	@echo "Building frontend assets using Containerfile..."
 	podman build --target frontend-build -t localhost/nextcloud-repos:frontend-build -f Containerfile .
-	@echo "Extracting built assets..."
 	-rm -rf js/
-	@CONTAINER_ID=$$(podman create localhost/nextcloud-repos:frontend-build) && \
-	podman cp "$$CONTAINER_ID:/build/js" ./js && \
-	podman rm "$$CONTAINER_ID"
+	$(call extract-from-image,localhost/nextcloud-repos:frontend-build,/build/js,./js)
 	@echo "✓ Frontend build completed!"
 	@echo "  Output: js/"
 
@@ -137,10 +145,7 @@ release:  ## Build release tarball with REUSE compliance check
 	@echo "Building release package with REUSE compliance check..."
 	podman build --target prepare-app-release -t "$(RELEASE_IMAGE_NAME)" -f Containerfile .
 	@echo ""
-	@echo "Extracting release tarball..."
-	$(eval CONTAINER_ID := $(shell podman create "$(RELEASE_IMAGE_NAME)"))
-	podman cp "$(CONTAINER_ID):/repos-release.tar.gz" ./$(RELEASE_FILE)
-	podman rm "$(CONTAINER_ID)"
+	$(call extract-from-image,$(RELEASE_IMAGE_NAME),/repos-release.tar.gz,./$(RELEASE_FILE))
 	@echo ""
 	@echo "✓ Release package created successfully!"
 	@echo "  File: $(RELEASE_FILE)"
