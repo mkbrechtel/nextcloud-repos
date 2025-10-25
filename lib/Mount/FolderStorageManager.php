@@ -127,12 +127,21 @@ class FolderStorageManager {
 		$dataDirectory = $this->config->getSystemValue('datadirectory');
 		$rootPath = $dataDirectory . '/__repos/' . $folderId;
 		if ($init) {
-			$result = mkdir($rootPath . '/files', recursive:  true);
-			$result = $result && mkdir($rootPath . '/trash');
-			$result = $result && mkdir($rootPath . '/versions');
-
-			if (!$result) {
-				throw new \Exception('Failed to create base directories for repository ' . $folderId);
+			// Create all required directories
+			if (!is_dir($rootPath . '/files')) {
+				if (!@mkdir($rootPath . '/files', 0770, true)) {
+					throw new \Exception('Failed to create files directory for repository ' . $folderId . ' at ' . $rootPath . '/files. Error: ' . error_get_last()['message'] ?? 'unknown');
+				}
+			}
+			if (!is_dir($rootPath . '/trash')) {
+				if (!@mkdir($rootPath . '/trash', 0770, true)) {
+					throw new \Exception('Failed to create trash directory for repository ' . $folderId);
+				}
+			}
+			if (!is_dir($rootPath . '/versions')) {
+				if (!@mkdir($rootPath . '/versions', 0770, true)) {
+					throw new \Exception('Failed to create versions directory for repository ' . $folderId);
+				}
 			}
 		}
 

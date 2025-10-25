@@ -78,7 +78,8 @@ class Application extends App implements IBootstrap {
 				$c->get(IEventDispatcher::class),
 				$c->get(IConfig::class),
 				$c->get(IAppConfig::class),
-				$c->get(LoggerInterface::class)
+				$c->get(LoggerInterface::class),
+				$c->get(\OCP\IGroupManager::class)
 			);
 		});
 
@@ -93,6 +94,7 @@ class Application extends App implements IBootstrap {
 			$enableEncryption = $config->getValueBool('repos', 'enable_encryption');
 
 			return new MountProvider(
+				$c->get(RepoManager::class),
 				$c->get(FolderManager::class),
 				$c->get(ACLManagerFactory::class),
 				$c->get(IUserSession::class),
@@ -137,7 +139,7 @@ class Application extends App implements IBootstrap {
 			$mountProviderCollection->registerProvider(Server::get(MountProvider::class));
 
 			$eventDispatcher->addListener(GroupDeletedEvent::class, function (GroupDeletedEvent $event): void {
-				Server::get(FolderManager::class)->deleteGroup($event->getGroup()->getGID());
+				Server::get(RepoManager::class)->deleteGroup($event->getGroup()->getGID());
 			});
 			$cacheListener->listen();
 		});

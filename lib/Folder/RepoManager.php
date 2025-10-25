@@ -12,8 +12,11 @@ use OCA\Repos\AppInfo\Application;
 use OCP\Constants;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\Files\FileInfo;
+use OCP\Files\Cache\ICacheEntry;
 use OCP\IAppConfig;
 use OCP\IConfig;
+use OCP\IGroupManager;
+use OCP\IUser;
 use OCP\Log\Audit\CriticalActionPerformedEvent;
 use Psr\Log\LoggerInterface;
 
@@ -31,6 +34,7 @@ class RepoManager {
 		private readonly IConfig $config,
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
+		private readonly IGroupManager $groupManager,
 	) {
 	}
 
@@ -196,6 +200,90 @@ class RepoManager {
 		$this->eventDispatcher->dispatchTyped(
 			new CriticalActionPerformedEvent('The permissions of group "%s" to the repository with id %d was set to %d', [$groupId, $folderId, $permissions])
 		);
+	}
+
+	/**
+	 * Delete a group from all repositories (called when group is deleted from system)
+	 */
+	public function deleteGroup(string $groupId): void {
+		$repos = $this->getAllRepos();
+		foreach ($repos as $repo) {
+			if (isset($repo['groups'][$groupId])) {
+				$this->removeGroupFromRepo($repo['id'], $groupId);
+			}
+		}
+	}
+
+	/**
+	 * Get folders for a user
+	 * @return list<FolderDefinitionWithPermissions>
+	 */
+	public function getFoldersForUser(IUser $user, ?int $folderId = null): array {
+		$userGroups = $this->groupManager->getUserGroupIds($user);
+		$repos = $this->getAllRepos();
+
+		$userFolders = [];
+		foreach ($repos as $repo) {
+			// Skip if filtering by folder ID and this isn't it
+			if ($folderId !== null && $repo['id'] !== $folderId) {
+				continue;
+			}
+
+			// Calculate user's permissions for this folder
+			$permissions = 0;
+			foreach ($repo['groups'] as $groupId => $groupInfo) {
+				if (in_array($groupId, $userGroups)) {
+					$permissions |= $groupInfo['permissions'];
+				}
+			}
+
+			// Skip if user has no access
+			if ($permissions === 0) {
+				continue;
+			}
+
+			// Get cache entry for root folder
+			try {
+				$separateStorage = $repo['options']['separate-storage'] ?? true;
+				$storage = $this->folderStorageManager->getBaseStorageForFolder($repo['id'], $separateStorage);
+				$cache = $storage->getCache();
+				$rootCacheEntry = $cache->get('files');
+
+				if (!$rootCacheEntry) {
+					// Create a fake cache entry if it doesn't exist
+					$rootCacheEntry = new \OC\Files\Cache\CacheEntry([
+						'id' => $repo['root_id'] ?? 0,
+						'storage' => $repo['storage_id'] ?? 0,
+						'path' => 'files',
+						'name' => basename($repo['mount_point']),
+						'mimetype' => 'httpd/unix-directory',
+						'size' => $repo['quota'] ?? -3,
+						'mtime' => time(),
+						'storage_mtime' => time(),
+						'etag' => '',
+						'permissions' => $permissions,
+						'encrypted' => 0,
+					]);
+				}
+
+				$userFolders[] = new FolderDefinitionWithPermissions(
+					$repo['id'],
+					$repo['mount_point'],
+					$repo['quota'],
+					$repo['acl'],
+					$repo['storage_id'] ?? 0,
+					$repo['root_id'] ?? 0,
+					$repo['options'],
+					$rootCacheEntry,
+					$permissions,
+				);
+			} catch (\Exception $e) {
+				$this->logger->error('Error getting storage for repository ' . $repo['id'], ['exception' => $e]);
+				continue;
+			}
+		}
+
+		return $userFolders;
 	}
 
 	/**

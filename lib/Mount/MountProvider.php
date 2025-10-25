@@ -14,6 +14,7 @@ use OCA\Repos\ACL\ACLManagerFactory;
 use OCA\Repos\Folder\FolderDefinition;
 use OCA\Repos\Folder\FolderDefinitionWithPermissions;
 use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCP\Constants;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Cache\ICacheEntry;
@@ -32,6 +33,7 @@ class MountProvider implements IMountProvider {
 	private ?Folder $root = null;
 
 	public function __construct(
+		private readonly RepoManager $repoManager,
 		private readonly FolderManager $folderManager,
 		private readonly ACLManagerFactory $aclManagerFactory,
 		private readonly IUserSession $userSession,
@@ -48,7 +50,7 @@ class MountProvider implements IMountProvider {
 	 * @return list<FolderDefinitionWithPermissions>
 	 */
 	public function getFoldersForUser(IUser $user): array {
-		return $this->folderManager->getFoldersForUser($user);
+		return $this->repoManager->getFoldersForUser($user);
 	}
 
 	public function getMountsForUser(IUser $user, IStorageFactory $loader): array {
