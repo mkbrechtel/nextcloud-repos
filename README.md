@@ -70,10 +70,11 @@ For the early development our primary environment target is the latest Nextcloud
 
 2. **Start the development server:**
    ```bash
-   ./start-dev-server.sh
+   make dev
+   # or alternatively: ./start-dev-server.sh
    ```
 
-   This script will:
+   This will:
    - Build a Nextcloud 32 container with git, git-annex, and datalad
    - Mount the source code into the container for live editing
    - Enable the repos app automatically
@@ -86,10 +87,45 @@ For the early development our primary environment target is the latest Nextcloud
 
 ### Development Commands
 
+The project includes a comprehensive Makefile for common development tasks. Run `make help` to see all available commands.
+
+#### Quick Reference
+
 ```bash
-# Run occ commands (using the wrapper script)
+# Development Server
+make dev              # Start the development server
+make dev-stop         # Stop the development server
+make dev-restart      # Restart the development server
+make dev-logs         # View server logs
+make dev-shell        # Open shell in container
+make dev-status       # Show server status
+
+# OCC Commands
+make occ ARGS="repos:list"          # List repositories
+make occ ARGS="repos:create MyRepo" # Create repository
+
+# Testing
+make test             # Run all tests (PHP + browser)
+make test-php         # Run PHP unit tests only
+make test-browser     # Run browser tests only
+
+# Building
+make build            # Build frontend (JavaScript/CSS)
+make release          # Build release tarball
+make test-release     # Test release package
+
+# Cleanup
+make clean            # Clean build artifacts
+make clean-all        # Clean everything including images
+```
+
+#### Using Shell Scripts Directly
+
+You can also use the shell scripts directly if preferred:
+
+```bash
+# Run occ commands
 ./occ.sh repos:list
-./occ.sh app:list
 ./occ.sh repos:create my-repo
 
 # View container logs
@@ -110,12 +146,20 @@ The source code is mounted into the container, so any changes you make to the co
 
 ```bash
 # Build release tarball with REUSE compliance check
-./build-release.sh
+make release
+# or alternatively: ./build-release.sh
 ```
 
 ### Running Tests
 
 The project includes two types of tests:
+
+#### Running All Tests
+
+```bash
+# Run both PHP unit tests and browser tests
+make test
+```
 
 #### Browser Tests
 
@@ -123,7 +167,8 @@ Browser-based integration tests using Playwright (requires dev server to be runn
 
 ```bash
 # Run browser tests
-./run-browser-tests.sh
+make test-browser
+# or alternatively: ./run-browser-tests.sh
 ```
 
 Browser tests will automatically:
@@ -138,7 +183,8 @@ PHP integration tests using PHPUnit (runs in isolated container):
 
 ```bash
 # Run PHP unit tests
-./run-php-tests.sh
+make test-php
+# or alternatively: ./run-php-tests.sh
 ```
 
 Tests are located in `tests/Integration/` and cover:
