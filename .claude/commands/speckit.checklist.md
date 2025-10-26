@@ -1,4 +1,7 @@
 ---
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-License-Identifier: MIT
+
 description: Generate a custom checklist for the current feature based on user requirements.
 ---
 

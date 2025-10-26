@@ -1,3 +1,9 @@
+---
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
+# SPDX-License-Identifier: MIT
+---
+
 # [PROJECT NAME] Development Guidelines
 
 Auto-generated from all feature plans. Last updated: [DATE]

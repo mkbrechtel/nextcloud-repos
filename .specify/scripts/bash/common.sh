@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-License-Identifier: MIT
+
 # Common functions and variables for all scripts
 
 # Get repository root, with fallback for non-git repositories

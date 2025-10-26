@@ -1,4 +1,7 @@
 ---
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-License-Identifier: MIT
+
 description: Create or update the feature specification from a natural language feature description.
 ---
 

@@ -1,4 +1,7 @@
 <!--
+SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
+SPDX-License-Identifier: CC0-1.0
+
 Sync Impact Report:
 Version: 0.0.0 → 1.0.0 (Initial constitution)
 Created: 2025-10-26
