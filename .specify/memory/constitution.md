@@ -3,33 +3,28 @@ SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechte
 SPDX-License-Identifier: CC0-1.0
 
 Sync Impact Report:
-Version: 0.0.0 → 1.0.0 (Initial constitution)
-Created: 2025-10-26
+Version: 1.0.0 → 1.1.0 (Test-First Development principle added; Governance section removed)
+Amended: 2025-10-26
 
-Principles Defined:
-- I. REUSE Standard Compliance (Copyright Attribution & License Management)
-- II. Containerized Development (Podman-Based Builds)
-- III. Issue Tracking in Markdown (issues/ folder)
-- IV. Git-Based Version Control
-- V. Nextcloud Integration Architecture
+Principles Modified:
+- Added: VI. Test-First Development
+- Removed: Governance section (Amendment Process, Compliance Review, Versioning)
 
-Added Sections:
-- Core Principles (all 5 principles)
-- Development Workflow
-- Quality Standards
-- Governance
+Rationale:
+- Test-first development ensures specifications drive implementation with verifiable outcomes
+- Governance section was administrative overhead; constitutional amendments follow standard MR workflow
+- Test references to specs provide traceability from requirements through implementation
 
 Templates Status:
 ✅ plan-template.md - Constitution Check section present
-✅ spec-template.md - Requirements alignment compatible
-✅ tasks-template.md - Task organization supports principles
-⚠ No constitution-specific constraints need to be added to templates yet
+✅ spec-template.md - Requirements alignment compatible; test-first compatible
+✅ tasks-template.md - Already includes test tasks with NOTE about writing tests first
+⚠ No additional template updates needed; test-first is already reflected in tasks template
 
 Follow-up Items:
-- Monitor for containerization compliance in future features
-- Validate REUSE standard compliance during implementation phase
-- Ensure issue tracking workflow is followed for all new issues
-- Ensure proper attribution when using or deriving work from other authors
+- Ensure test files include spec references in comments or metadata
+- Verify tests are written and fail before implementation begins
+- Maintain REUSE compliance for all test files
 -->
 
 # Nextcloud Repositories Constitution
@@ -109,6 +104,23 @@ This project creates tight integration between Nextcloud and Git/Git-Annex/Datal
 - Version history MUST be visible in Nextcloud interface
 
 **Rationale**: The architecture enables seamless collaboration between technical and non-technical users by bridging Nextcloud's user-friendly interface with Git's powerful version control. Maintaining component separation ensures modularity and allows independent development and testing of each integration piece.
+
+### VI. Test-First Development
+
+Tests for intended functionality MUST be implemented before the functionality itself, and each test MUST reference the specification that caused its implementation.
+
+**Requirements**:
+- Test files MUST include references to the specification (spec.md) that defines the requirement being tested
+- Tests MUST be written and MUST fail before implementation begins
+- Test file headers or comments MUST include:
+  - Reference to the spec file (e.g., `specs/[###-feature]/spec.md`)
+  - Reference to specific user story, functional requirement, or acceptance criteria being tested
+  - Reference format: `# Spec: specs/###-feature/spec.md#FR-001` or similar traceable identifier
+- Implementation MUST NOT begin until tests exist and demonstrate failure
+- Tests validate acceptance criteria from specifications, not implementation details
+- Contract tests, integration tests, and unit tests all follow test-first discipline when requested
+
+**Rationale**: Test-first development ensures that specifications drive implementation with verifiable outcomes. By requiring tests to reference their originating specification, we maintain complete traceability from user requirements through acceptance criteria to test validation and implementation. This creates a living documentation chain where tests serve as executable specifications, and changes to requirements are immediately visible in test expectations. Tests that fail first prove they actually validate the requirement rather than just passing by accident. This discipline prevents implementation drift from specifications and ensures all functionality has measurable acceptance criteria.
 
 ## Development Workflow
 
@@ -200,26 +212,4 @@ make package
 
 ## Governance
 
-### Amendment Process
-
-1. Proposed changes to constitution MUST be submitted as merge requests
-2. Constitutional changes require project maintainer approval
-3. Version increments follow semantic versioning:
-   - **MAJOR**: Backward-incompatible governance changes, principle removals
-   - **MINOR**: New principles added or significant expansions
-   - **PATCH**: Clarifications, wording fixes, non-semantic refinements
-4. All amendments MUST include rationale in the Sync Impact Report
-5. Templates in `.specify/templates/` MUST be updated to reflect constitution changes
-
-### Compliance Review
-
-- All merge requests MUST demonstrate constitutional compliance
-- Speckit commands check constitution compliance automatically where applicable
-- Violations MUST be justified in plan.md Complexity Tracking section
-- Maintainers may grant exceptions for experimental branches (not main)
-
-### Versioning
-
-Constitution uses semantic versioning documented in the Version line below.
-
-**Version**: 1.0.0 | **Ratified**: 2025-10-26 | **Last Amended**: 2025-10-26
+**Version**: 1.1.0 | **Ratified**: 2025-10-26 | **Last Amended**: 2025-10-26
