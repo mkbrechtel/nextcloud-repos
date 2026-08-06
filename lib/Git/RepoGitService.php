@@ -113,17 +113,26 @@ class RepoGitService {
 		return $this->withRepoLock($folderId, function () use ($folderId, $paths, $message, $authorName, $authorEmail): ?string {
 			$worktree = $this->getWorktreeDir($folderId);
 
-			$existing = array_values(array_filter(
-				$paths,
-				fn (string $path): bool => file_exists($worktree . '/' . $path),
-			));
+			$existing = [];
+			$gone = [];
+			foreach ($paths as $path) {
+				if (file_exists($worktree . '/' . $path)) {
+					$existing[] = $path;
+				} else {
+					$gone[] = $path;
+				}
+			}
 			if ($existing !== []) {
 				// annex add routes small files to git and large ones to the
-				// annex according to annex.largefiles
+				// annex according to annex.largefiles — and must not be
+				// followed by git add on the same paths, which would re-clean
+				// freshly annexed files back into git
 				$this->git->annexAdd($worktree, $existing);
 			}
-			// pick up deletions and renames
-			$this->git->addAll($worktree, $paths);
+			if ($gone !== []) {
+				// record deletions (and rename sources)
+				$this->git->addAll($worktree, $gone);
+			}
 
 			return $this->git->commit($worktree, $message, $authorName, $authorEmail);
 		});
@@ -145,8 +154,22 @@ class RepoGitService {
 	 * the content is not present in this repository.
 	 */
 	public function getAnnexContentPath(int $folderId, string $key): ?string {
-		// run in the worktree context: annex may keep objects in the
-		// worktree's private git dir rather than the common dir
+		// primary: direct filesystem lookup in the known object layouts —
+		// lock-free, immune to annex lock contention under parallel requests
+		$gitDir = $this->getGitDir($folderId);
+		$objectDirs = [
+			$gitDir . '/annex/objects',
+			$gitDir . '/worktrees/files/annex/objects',
+		];
+		$safeKey = str_replace(['*', '?', '[', ']', '\\'], '', $key);
+		foreach ($objectDirs as $objectDir) {
+			$matches = glob($objectDir . '/*/*/' . $safeKey . '/' . $safeKey, GLOB_NOSORT);
+			if (!empty($matches) && is_file($matches[0])) {
+				return $matches[0];
+			}
+		}
+
+		// fallback: ask git-annex (covers non-standard layouts)
 		$worktree = $this->getWorktreeDir($folderId);
 		$location = $this->git->annexContentLocation($worktree, $key);
 		if ($location === null) {

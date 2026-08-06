@@ -71,12 +71,18 @@ class GitRepoController extends Controller {
 
 		/** @var \OC\User\Session $session */
 		$session = $this->userSession;
-		try {
-			if ($session->logClientIn($loginName, $password, $this->request, $this->throttler)) {
-				return $this->userSession->getUser();
+		// retry once: rapid successive logins (git-annex probes both object
+		// layouts in parallel) can hit transient DB contention that reads as
+		// a failed login and makes the client discard its stored credential
+		for ($attempt = 0; $attempt < 2; $attempt++) {
+			try {
+				if ($session->logClientIn($loginName, $password, $this->request, $this->throttler)) {
+					return $this->userSession->getUser();
+				}
+			} catch (\Exception $e) {
+				$this->logger->error('git http login failed', ['app' => 'repos', 'exception' => $e]);
 			}
-		} catch (\Exception $e) {
-			$this->logger->debug('git http login failed', ['app' => 'repos', 'exception' => $e]);
+			usleep(150000);
 		}
 		return null;
 	}

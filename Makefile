@@ -102,6 +102,9 @@ test: test-php test-browser  ## Run all tests (PHP unit tests + browser tests)
 
 test-all: test  ## Alias for 'test'
 
+test-e2e:  ## Run the end-to-end acceptance test against the running dev server
+	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/tests/e2e.sh
+
 test-browser:  ## Run browser tests with Playwright
 	@if ! podman ps --format "{{.Names}}" | grep -q "^$(CONTAINER_NAME)$$"; then \
 	    echo "Error: Development server '$(CONTAINER_NAME)' is not running."; \
