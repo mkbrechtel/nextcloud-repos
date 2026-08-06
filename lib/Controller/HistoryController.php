@@ -32,9 +32,12 @@ class HistoryController extends Controller {
 		parent::__construct($appName, $request);
 	}
 
+	/**
+	 * @param string $folderId numeric folder id or the repo's mount point name
+	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
-	public function fileHistory(int $folderId, string $path = ''): DataResponse {
+	public function fileHistory(string $folderId, string $path = ''): DataResponse {
 		$user = $this->userSession->getUser();
 		if ($user === null) {
 			return new DataResponse(['error' => 'Unauthorized'], Http::STATUS_UNAUTHORIZED);
@@ -42,9 +45,17 @@ class HistoryController extends Controller {
 		if (str_contains($path, '..')) {
 			return new DataResponse(['error' => 'Invalid path'], Http::STATUS_BAD_REQUEST);
 		}
-		if ($this->repoManager->getFoldersForUser($user, $folderId) === []) {
+		$folder = null;
+		foreach ($this->repoManager->getFoldersForUser($user) as $candidate) {
+			if ((string)$candidate->id === $folderId || $candidate->mountPoint === $folderId) {
+				$folder = $candidate;
+				break;
+			}
+		}
+		if ($folder === null) {
 			return new DataResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
+		$folderId = $folder->id;
 
 		$history = $this->repoGitService->getHistory($folderId, $path);
 

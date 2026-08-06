@@ -25,5 +25,6 @@ class LoadAdditionalScriptsListener implements IEventListener {
 
 		\OCP\Util::addInitScript('groupfolders', 'groupfolders-init');
 		\OCP\Util::addScript('groupfolders', 'groupfolders-files');
+		\OCP\Util::addScript('repos', 'repos-history');
 	}
 }

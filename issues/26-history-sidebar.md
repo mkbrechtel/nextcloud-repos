@@ -22,3 +22,6 @@ This is intentionally read-only and small: the first visible payoff of the integ
 
 ### Acceptance
 A file edited both via push and via the Files app shows both commits with correct attribution in the sidebar.
+
+## Status
+The history API is implemented (`/apps/repos/api/history/{repo}`, addressable by folder id or mount point, covered by the e2e test) and a build-free vanilla JS sidebar tab (`js/repos-history.js`) is registered and served on the Files page. Outstanding: verify the tab renders correctly in an actual browser session and refine the presentation.

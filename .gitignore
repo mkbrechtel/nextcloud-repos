@@ -6,6 +6,7 @@ node_modules/
 build
 vendor
 js/
+!js/repos-history.js
 cypress/downloads/
 .idea/
 tests/coverage/
