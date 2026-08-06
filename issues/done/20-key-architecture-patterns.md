@@ -35,3 +35,6 @@ Team folders app uses several architectural patterns:
 - Focus on structural cleanup first
 - Architectural decisions come after refactoring is complete
 - Document decisions as they're made
+
+## Resolution
+The postponed decisions are settled in issue 22 (MVP architecture: direct git execution, same-channel annex access) and detailed per area in issues 23–25. Rejected alternatives and their reasoning are recorded in issue 22's Considerations section.
