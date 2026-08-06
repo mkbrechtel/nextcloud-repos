@@ -210,6 +210,17 @@ class GitRepoController extends Controller {
 	}
 
 	/**
+	 * git-annex probes the repo's config over dumb HTTP to learn the annex
+	 * uuid; without it a clone won't treat the origin as an annex peer.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	public function getConfig(string $repo): Response {
+		return $this->serveRepoFile($repo, 'config');
+	}
+
+	/**
 	 * Annex objects over the clone URL (issue 25): git-annex requests
 	 * annex/objects/<hashdirs>/<key>/<key> on http remotes. The key is the
 	 * last path component; we resolve its content location instead of

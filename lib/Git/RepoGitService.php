@@ -145,14 +145,18 @@ class RepoGitService {
 	 * the content is not present in this repository.
 	 */
 	public function getAnnexContentPath(int $folderId, string $key): ?string {
-		$location = $this->git->annexContentLocation($this->getGitDir($folderId), $key);
+		// run in the worktree context: annex may keep objects in the
+		// worktree's private git dir rather than the common dir
+		$worktree = $this->getWorktreeDir($folderId);
+		$location = $this->git->annexContentLocation($worktree, $key);
 		if ($location === null) {
 			return null;
 		}
 		$absolute = str_starts_with($location, '/')
 			? $location
-			: $this->getGitDir($folderId) . '/' . $location;
-		return is_file($absolute) ? $absolute : null;
+			: $worktree . '/' . $location;
+		$resolved = realpath($absolute);
+		return ($resolved !== false && is_file($resolved)) ? $resolved : null;
 	}
 
 	/**

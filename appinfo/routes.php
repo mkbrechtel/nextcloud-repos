@@ -29,6 +29,9 @@ return [
 		// Objects - Git object storage (for fallback to "dumb" HTTP protocol)
 		['name' => 'git_repo#getObject', 'url' => '/repos/{repo}/objects/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 
+		// Repo config - git-annex probes this to learn the annex uuid
+		['name' => 'git_repo#getConfig', 'url' => '/repos/{repo}/config', 'verb' => 'GET'],
+
 		// Annex objects - git-annex fetches keys over the clone URL (issue 25)
 		['name' => 'git_repo#annexObject', 'url' => '/repos/{repo}/annex/objects/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
 
