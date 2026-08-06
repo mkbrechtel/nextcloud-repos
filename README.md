@@ -55,6 +55,144 @@ Create a Git-annex special remote that uses the existing Nextclouds Oauth authen
 
 For the early development our primary environment target is the latest Nextcloud stable release packaged into a Podman container. The source code is mounted into the container to be able to live edit the app code and see the results directly.
 
+### Prerequisites
+
+- [Podman](https://podman.io/)
+- Git
+
+### Starting the Development Server
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://codeberg.org/mkbrechtel/nextcloud-repos.git
+   cd nextcloud-repos
+   ```
+
+2. **Start the development server:**
+   ```bash
+   make dev
+   # or alternatively: ./start-dev-server.sh
+   ```
+
+   This will:
+   - Build a Nextcloud 32 container with git, git-annex, and datalad
+   - Mount the source code into the container for live editing
+   - Enable the repos app automatically
+   - Start the server on http://localhost:8080
+
+3. **Access Nextcloud:**
+   - URL: http://localhost:8080
+   - Admin username: `admin`
+   - Admin password: `admin`
+
+### Development Commands
+
+The project includes a comprehensive Makefile for common development tasks. Run `make help` to see all available commands.
+
+#### Quick Reference
+
+```bash
+# Development Server
+make dev              # Start the development server
+make dev-stop         # Stop the development server
+make dev-restart      # Restart the development server
+make dev-logs         # View server logs
+make dev-shell        # Open shell in container
+make dev-status       # Show server status
+
+# OCC Commands
+make occ ARGS="repos:list"          # List repositories
+make occ ARGS="repos:create MyRepo" # Create repository
+
+# Testing
+make test             # Run all tests (PHP + browser)
+make test-php         # Run PHP unit tests only
+make test-browser     # Run browser tests only
+
+# Building
+make build            # Build frontend (JavaScript/CSS)
+make release          # Build release tarball
+make test-release     # Test release package
+
+# Cleanup
+make clean            # Clean build artifacts
+make clean-all        # Clean everything including images
+```
+
+#### Using Shell Scripts Directly
+
+You can also use the shell scripts directly if preferred:
+
+```bash
+# Run occ commands
+./occ.sh repos:list
+./occ.sh repos:create my-repo
+
+# View container logs
+podman logs -f nextcloud-repos-dev
+
+# Stop the development server
+podman stop nextcloud-repos-dev
+
+# Access the container shell
+podman exec -it -u www-data nextcloud-repos-dev bash
+```
+
+### Live Development
+
+The source code is mounted into the container, so any changes you make to the code will be immediately reflected in the running Nextcloud instance. You may need to refresh your browser or clear the cache for frontend changes.
+
+### Building Releases
+
+```bash
+# Build release tarball with REUSE compliance check
+make release
+# or alternatively: ./build-release.sh
+```
+
+### Running Tests
+
+The project includes two types of tests:
+
+#### Running All Tests
+
+```bash
+# Run both PHP unit tests and browser tests
+make test
+```
+
+#### Browser Tests
+
+Browser-based integration tests using Playwright (requires dev server to be running):
+
+```bash
+# Run browser tests
+make test-browser
+# or alternatively: ./run-browser-tests.sh
+```
+
+Browser tests will automatically:
+- Take screenshots (saved to `tests/browser/screenshots/`)
+- Save HTML output (saved to `tests/browser/html_output/`)
+
+For more details, see [tests/browser/README.md](tests/browser/README.md).
+
+#### PHP Unit Tests
+
+PHP integration tests using PHPUnit (runs in isolated container):
+
+```bash
+# Run PHP unit tests
+make test-php
+# or alternatively: ./run-php-tests.sh
+```
+
+Tests are located in `tests/Integration/` and cover:
+- Repository creation and management
+- Group permissions
+- File access and mounting
+- CLI commands
+
 The special remote is developed inside the ./git-annex-special-remote folder in Go?!…
 
 ## Issue Reporting

@@ -16,7 +16,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 class Quota extends FolderCommand {
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:quota')
+			->setName('repos:quota')
 			->setDescription('Edit the quota of a configured Team folder')
 			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to configure')
 			->addArgument('quota', InputArgument::REQUIRED, 'New value for the quota of the folder');

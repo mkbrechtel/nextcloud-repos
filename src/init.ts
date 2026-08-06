@@ -15,11 +15,11 @@ registerFileAction(openGroupfolderAction)
 const Navigation = getNavigation()
 Navigation.register(new View({
 	id: appName,
-	name: t('groupfolders', 'Team folders'),
-	caption: t('groupfolders', 'List of Team folders.'),
+	name: t('repos', 'Repositories'),
+	caption: t('repos', 'List of Repositories.'),
 
-	emptyTitle: t('groupfolders', 'No Team folders yet'),
-	emptyCaption: t('groupfolders', 'Team folders will show up here'),
+	emptyTitle: t('repos', 'No Repositories yet'),
+	emptyCaption: t('repos', 'Repositories will show up here'),
 
 	icon: GroupFolderSvg,
 	order: 20,

@@ -7,7 +7,7 @@ declare(strict_types=1);
  */
 namespace OCA\Repos\AppInfo;
 
-use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCP\App\IAppManager;
 use OCP\Capabilities\ICapability;
 use OCP\IUser;
@@ -16,7 +16,7 @@ use OCP\IUserSession;
 class Capabilities implements ICapability {
 	public function __construct(
 		private readonly IUserSession $userSession,
-		private readonly FolderManager $folderManager,
+		private readonly RepoManager $repoManager,
 		private readonly IAppManager $appManager,
 	) {
 	}
@@ -44,7 +44,7 @@ class Capabilities implements ICapability {
 	}
 
 	private function hasFolders(IUser $user): bool {
-		$folders = $this->folderManager->getFoldersForUser($user);
+		$folders = $this->repoManager->getFoldersForUser($user);
 		return count($folders) > 0;
 	}
 }

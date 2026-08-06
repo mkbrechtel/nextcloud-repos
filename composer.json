@@ -3,7 +3,8 @@
 		"roave/security-advisories": "dev-latest",
 		"sabre/dav": "^4.1",
 		"sabre/xml": "^2.2",
-		"nextcloud/ocp": "dev-master"
+		"nextcloud/ocp": "dev-master",
+		"phpunit/phpunit": "^10.5"
 	},
 	"require": {
 		"bamarni/composer-bin-plugin": "^1.8"
@@ -21,7 +22,7 @@
 		"test:unit": "phpunit -c tests/phpunit.xml",
 		"test:unit:coverage": "XDEBUG_MODE=coverage phpunit -c tests/phpunit.xml",
 		"rector": "rector && composer cs:fix",
-		"openapi": "generate-spec && npm run typescript:generate"
+		"openapi": "generate-spec && yarn typescript:generate"
 	},
 	"config": {
 		"allow-plugins": {

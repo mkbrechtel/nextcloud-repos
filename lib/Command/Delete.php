@@ -8,6 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\Repos\Command;
 
+use OCA\Repos\Folder\FolderDefinition;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,9 +18,9 @@ use Symfony\Component\Console\Question\ConfirmationQuestion;
 class Delete extends FolderCommand {
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:delete')
-			->setDescription('Delete Team folder')
-			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to rename')
+			->setName('repos:delete')
+			->setDescription('Delete repository')
+			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the repository to delete')
 			->addOption('force', 'f', InputOption::VALUE_NONE, 'Skip confirmation');
 		parent::configure();
 	}
@@ -31,10 +32,20 @@ class Delete extends FolderCommand {
 		}
 
 		$helper = $this->getHelper('question');
-		$question = new ConfirmationQuestion('Are you sure you want to delete the Team folder ' . $folder->mountPoint . ' and all files within, this cannot be undone (y/N).', false);
+		$question = new ConfirmationQuestion('Are you sure you want to delete the repository ' . $folder['mount_point'] . ' and all files within, this cannot be undone (y/N).', false);
 		if ($input->getOption('force') || $helper->ask($input, $output, $question)) {
-			$this->folderStorageManager->deleteStoragesForFolder($folder->id);
-			$this->folderManager->removeFolder($folder->id);
+			// Convert array to FolderDefinition for deleteStoragesForFolder
+			$folderDef = new FolderDefinition(
+				$folder['id'],
+				$folder['mount_point'],
+				$folder['quota'],
+				$folder['acl'],
+				$folder['storage_id'],
+				$folder['root_id'],
+				$folder['options']
+			);
+			$this->folderStorageManager->deleteStoragesForFolder($folderDef);
+			$this->repoManager->deleteRepo($folder['id']);
 		}
 
 		return 0;

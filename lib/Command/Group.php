@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace OCA\Repos\Command;
 
-use OCA\Repos\Folder\FolderManager;
+use OCA\Repos\Folder\RepoManager;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\Mount\MountProvider;
 use OCP\Constants;
@@ -28,18 +28,18 @@ class Group extends FolderCommand {
 	];
 
 	public function __construct(
-		FolderManager $folderManager,
+		RepoManager $repoManager,
 		IRootFolder $rootFolder,
 		MountProvider $mountProvider,
 		FolderStorageManager $folderStorageManager,
 		private readonly IGroupManager $groupManager,
 	) {
-		parent::__construct($folderManager, $rootFolder, $mountProvider, $folderStorageManager);
+		parent::__construct($repoManager, $rootFolder, $mountProvider, $folderStorageManager);
 	}
 
 	protected function configure(): void {
 		$this
-			->setName('groupfolders:group')
+			->setName('repos:group')
 			->setDescription('Edit the groups that have access to a Team folder')
 			->addArgument('folder_id', InputArgument::REQUIRED, 'Id of the folder to configure')
 			->addArgument('group', InputArgument::REQUIRED, 'The group to configure')
@@ -58,17 +58,17 @@ class Group extends FolderCommand {
 		$groupString = $input->getArgument('group');
 		$group = $this->groupManager->get($groupString);
 		if ($input->getOption('delete')) {
-			$this->folderManager->removeApplicableGroup($folder->id, $groupString);
+			$this->repoManager->removeGroupFromRepo($folder['id'], $groupString);
 			return 0;
-		} elseif ($group || $this->folderManager->isACircle($groupString)) {
+		} elseif ($group) {
 			$permissionsString = $input->getArgument('permissions');
 			$permissions = $this->getNewPermissions($permissionsString);
 			if ($permissions) {
-				if (!isset($folder->groups[$groupString])) {
-					$this->folderManager->addApplicableGroup($folder->id, $groupString);
+				if (!isset($folder['groups'][$groupString])) {
+					$this->repoManager->addGroupToRepo($folder['id'], $groupString, $permissions);
+				} else {
+					$this->repoManager->setGroupPermissions($folder['id'], $groupString, $permissions);
 				}
-
-				$this->folderManager->setGroupPermissions($folder->id, $groupString, $permissions);
 
 				return 0;
 			}
@@ -78,7 +78,7 @@ class Group extends FolderCommand {
 			return -1;
 		}
 
-		$output->writeln('<error>group/team not found: ' . $groupString . '</error>');
+		$output->writeln('<error>group not found: ' . $groupString . '</error>');
 
 		return -1;
 	}

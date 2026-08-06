@@ -32,22 +32,10 @@
 	<repository type="git">https://codeberg.org/mkbrechtel/nextcloud-repos.git</repository>
 
 	<dependencies>
-		<nextcloud min-version="33" max-version="33" />
+		<nextcloud min-version="32" max-version="32" />
 	</dependencies>
 
-	<background-jobs>
-		<job>OCA\Repos\BackgroundJob\ExpireGroupVersions</job>
-		<job>OCA\Repos\BackgroundJob\ExpireGroupTrash</job>
-	</background-jobs>
-
-	<repair-steps>
-		<post-migration>
-			<step>OCA\Repos\Migration\WrongDefaultQuotaRepairStep</step>
-		</post-migration>
-	</repair-steps>
-
 	<commands>
-		<command>OCA\Repos\Command\ExpireGroup\ExpireGroupBase</command>
 		<command>OCA\Repos\Command\ListCommand</command>
 		<command>OCA\Repos\Command\ACL</command>
 		<command>OCA\Repos\Command\Quota</command>
@@ -56,13 +44,8 @@
 		<command>OCA\Repos\Command\Rename</command>
 		<command>OCA\Repos\Command\Delete</command>
 		<command>OCA\Repos\Command\Scan</command>
-		<command>OCA\Repos\Command\Trashbin\Cleanup</command>
+		<command>OCA\Repos\Command\ConfigReposDir</command>
 	</commands>
-
-	<settings>
-		<admin>OCA\Repos\Settings\Admin</admin>
-		<admin-section>OCA\Repos\Settings\Section</admin-section>
-	</settings>
 
 	<sabre>
 		<collections>
