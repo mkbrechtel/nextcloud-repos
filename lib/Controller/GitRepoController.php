@@ -3,11 +3,18 @@
 declare(strict_types=1);
 /**
  * SPDX-FileCopyrightText: 2025 Markus Katharina Brechtel <markus.katharina.brechtel@thengo.net>
+ * SPDX-FileCopyrightText: 2026 Mirian Brechtel <brechtel@med.uni-frankfurt.de>
  * SPDX-License-Identifier: AGPL-3.0-or-later
  */
 
 namespace OCA\Repos\Controller;
 
+use OCA\Repos\Folder\FolderDefinitionWithPermissions;
+use OCA\Repos\Folder\RepoManager;
+use OCA\Repos\Git\GitCli;
+use OCA\Repos\Git\GitException;
+use OCA\Repos\Git\RepoGitService;
+use OCA\Repos\Mount\FolderStorageManager;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -17,99 +24,114 @@ use OCP\AppFramework\Http\DataDisplayResponse;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\AppFramework\Http\StreamResponse;
-use OCP\IConfig;
+use OCP\Constants;
 use OCP\IRequest;
+use OCP\IUser;
+use OCP\IUserSession;
+use OCP\Security\Bruteforce\IThrottler;
+use Psr\Log\LoggerInterface;
 
 /**
- * Controller for serving Git repositories over HTTP
+ * Serves Git repositories over HTTP (smart protocol) and annex objects over
+ * the same URL, authenticated with Nextcloud credentials / app passwords.
  *
- * Implements Git's "smart" HTTP protocol as documented in:
  * https://git-scm.com/docs/http-protocol
- *
- * This is a prototype implementation without authentication.
  */
 class GitRepoController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
-		private IConfig $config,
+		private readonly RepoManager $repoManager,
+		private readonly RepoGitService $repoGitService,
+		private readonly GitCli $git,
+		private readonly FolderStorageManager $folderStorageManager,
+		private readonly IUserSession $userSession,
+		private readonly IThrottler $throttler,
+		private readonly LoggerInterface $logger,
 	) {
 		parent::__construct($appName, $request);
 	}
 
+	// ---- authentication and authorization ---------------------------------
+
 	/**
-	 * Get the configured repos directory
+	 * Git clients speak HTTP basic auth: challenge when anonymous, validate
+	 * credentials (including app passwords) when given.
 	 */
-	private function getReposDirectory(): ?string {
-		$dir = $this->config->getAppValue('repos', 'repos_directory', '');
-		if ($dir === '') {
+	private function authenticate(): ?IUser {
+		if ($this->userSession->isLoggedIn()) {
+			return $this->userSession->getUser();
+		}
+
+		$loginName = $this->request->server['PHP_AUTH_USER'] ?? '';
+		$password = $this->request->server['PHP_AUTH_PW'] ?? '';
+		if ($loginName === '') {
 			return null;
 		}
-		return $dir;
+
+		/** @var \OC\User\Session $session */
+		$session = $this->userSession;
+		try {
+			if ($session->logClientIn($loginName, $password, $this->request, $this->throttler)) {
+				return $this->userSession->getUser();
+			}
+		} catch (\Exception $e) {
+			$this->logger->debug('git http login failed', ['app' => 'repos', 'exception' => $e]);
+		}
+		return null;
+	}
+
+	private function unauthorized(): Response {
+		$response = new DataResponse(['error' => 'Authentication required'], Http::STATUS_UNAUTHORIZED);
+		$response->addHeader('WWW-Authenticate', 'Basic realm="Nextcloud Repositories", charset="UTF-8"');
+		return $response;
 	}
 
 	/**
-	 * Get the full filesystem path for a repository
+	 * Resolve a repo URL name (mount point or numeric id) to a folder the
+	 * user may access with the needed permission.
 	 */
-	private function getRepoPath(string $repo): ?string {
-		$reposDir = $this->getReposDirectory();
-		if ($reposDir === null) {
-			return null;
+	private function findAuthorizedFolder(string $repo, IUser $user, bool $write): ?FolderDefinitionWithPermissions {
+		$needed = $write ? Constants::PERMISSION_UPDATE : Constants::PERMISSION_READ;
+		foreach ($this->repoManager->getFoldersForUser($user) as $folder) {
+			if ($folder->mountPoint === $repo || (string)$folder->id === $repo) {
+				return ($folder->permissions & $needed) === $needed ? $folder : null;
+			}
 		}
-
-		// Sanitize repo name to prevent directory traversal
-		$repo = basename($repo);
-		if (!str_ends_with($repo, '.git')) {
-			$repo .= '.git';
-		}
-
-		$path = $reposDir . '/' . $repo;
-
-		// Check if repository exists
-		if (!is_dir($path)) {
-			return null;
-		}
-
-		return $path;
+		return null;
 	}
 
-	/**
-	 * Info/refs endpoint for Git smart HTTP protocol
-	 */
+	// ---- smart HTTP protocol ----------------------------------------------
+
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function infoRefs(string $repo, string $service): Response {
-		$repoPath = $this->getRepoPath($repo);
-		if ($repoPath === null) {
-			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		// Validate service parameter
-		if (!in_array($service, ['git-upload-pack', 'git-receive-pack'])) {
+		if (!in_array($service, ['git-upload-pack', 'git-receive-pack'], true)) {
 			return new DataResponse(['error' => 'Invalid service'], Http::STATUS_BAD_REQUEST);
 		}
 
-		// Execute git command to get refs
-		// Use the service name without 'git-' prefix for the actual command
-		$gitCommand = str_replace('git-', '', $service);
-		$cmd = sprintf(
-			'cd %s && git %s --stateless-rpc --advertise-refs . 2>&1',
-			escapeshellarg($repoPath),
-			escapeshellarg($gitCommand)
-		);
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, $service === 'git-receive-pack');
+		if ($folder === null) {
+			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
 
-		$output = shell_exec($cmd);
-
-		if ($output === null || $output === false) {
-			error_log("Git command failed for repo $repo, service $service");
+		$gitDir = $this->repoGitService->getGitDir($folder->id);
+		try {
+			$refs = $service === 'git-upload-pack'
+				? $this->git->uploadPackAdvertise($gitDir)
+				: $this->git->receivePackAdvertise($gitDir);
+		} catch (GitException $e) {
+			$this->logger->error('git advertise failed', ['app' => 'repos', 'exception' => $e]);
 			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		// Format response according to Git HTTP protocol
-		// Add packet-line formatted service announcement
 		$serviceHeader = '# service=' . $service . "\n";
-		$content = $this->pktLine($serviceHeader) . "0000" . $output;
+		$content = $this->pktLine($serviceHeader) . '0000' . $refs;
 
 		$response = new DataDisplayResponse($content, Http::STATUS_OK);
 		$response->addHeader('Content-Type', 'application/x-' . $service . '-advertisement');
@@ -117,120 +139,128 @@ class GitRepoController extends Controller {
 		return $response;
 	}
 
-	/**
-	 * git-upload-pack endpoint (for clone/fetch)
-	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function uploadPack(string $repo): Response {
-		return $this->executeGitService($repo, 'git-upload-pack');
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, false);
+		if ($folder === null) {
+			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		try {
+			$output = $this->git->uploadPack($this->repoGitService->getGitDir($folder->id), $this->getRequestBody());
+		} catch (GitException $e) {
+			$this->logger->error('upload-pack failed', ['app' => 'repos', 'exception' => $e]);
+			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		}
+
+		return $this->gitResultResponse($output, 'git-upload-pack');
 	}
 
-	/**
-	 * git-receive-pack endpoint (for push)
-	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function receivePack(string $repo): Response {
-		return $this->executeGitService($repo, 'git-receive-pack');
-	}
-
-	/**
-	 * Execute a Git service with the request body as input
-	 */
-	private function executeGitService(string $repo, string $service): Response {
-		$repoPath = $this->getRepoPath($repo);
-		if ($repoPath === null) {
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, true);
+		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// Get request body
-		$input = file_get_contents('php://input');
-
-		// Strip 'git-' prefix from service name to get the actual git command
-		$gitCommand = str_replace('git-', '', $service);
-
-		// Execute git command
-		$cmd = sprintf(
-			'git -C %s %s --stateless-rpc %s',
-			escapeshellarg($repoPath),
-			escapeshellarg($gitCommand),
-			escapeshellarg($repoPath)
-		);
-
-		$descriptorspec = [
-			0 => ['pipe', 'r'],  // stdin
-			1 => ['pipe', 'w'],  // stdout
-			2 => ['pipe', 'w'],  // stderr
-		];
-
-		$process = proc_open($cmd, $descriptorspec, $pipes);
-		if (!is_resource($process)) {
-			return new DataResponse(['error' => 'Failed to execute Git command'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		try {
+			$output = $this->git->receivePack($this->repoGitService->getGitDir($folder->id), $this->getRequestBody());
+		} catch (GitException $e) {
+			$this->logger->error('receive-pack failed', ['app' => 'repos', 'exception' => $e]);
+			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
 		}
 
-		// Write input to stdin
-		fwrite($pipes[0], $input);
-		fclose($pipes[0]);
-
-		// Read output
-		$output = stream_get_contents($pipes[1]);
-		fclose($pipes[1]);
-
-		// Read errors
-		$errors = stream_get_contents($pipes[2]);
-		fclose($pipes[2]);
-
-		$returnCode = proc_close($process);
-
-		if ($returnCode !== 0) {
-			error_log("Git command failed for $service on $repo: return code=$returnCode, stderr: " . $errors);
-			return new DataResponse(['error' => 'Git command failed', 'details' => $errors, 'code' => $returnCode], Http::STATUS_INTERNAL_SERVER_ERROR);
+		// materialize the pushed state in the mounted worktree
+		try {
+			$this->repoGitService->syncWorktreeAfterPush($folder->id);
+			$this->folderStorageManager->scanFolder($folder->id);
+		} catch (\Exception $e) {
+			$this->logger->error('worktree sync after push failed', ['app' => 'repos', 'exception' => $e]);
 		}
 
-		// Return response
-		$response = new DataDisplayResponse($output, Http::STATUS_OK);
-		$response->addHeader('Content-Type', 'application/x-' . $service . '-result');
-		$response->addHeader('Cache-Control', 'no-cache');
-		return $response;
+		return $this->gitResultResponse($output, 'git-receive-pack');
 	}
 
-	/**
-	 * Format a string as a Git packet-line
-	 *
-	 * Git packet-line format: 4-byte hex length (including the 4 bytes) + data
-	 */
-	private function pktLine(string $data): string {
-		$len = strlen($data) + 4;
-		return sprintf('%04x', $len) . $data;
-	}
+	// ---- dumb protocol + annex objects ------------------------------------
 
-	/**
-	 * HEAD file endpoint
-	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function getHead(string $repo): Response {
-		return $this->serveFile($repo, 'HEAD');
+		return $this->serveRepoFile($repo, 'HEAD');
+	}
+
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	public function getObject(string $repo, string $path): Response {
+		return $this->serveRepoFile($repo, 'objects/' . $path);
 	}
 
 	/**
-	 * Serve a file from the repository
+	 * Annex objects over the clone URL (issue 25): git-annex requests
+	 * annex/objects/<hashdirs>/<key>/<key> on http remotes. The key is the
+	 * last path component; we resolve its content location instead of
+	 * trusting the requested hash directories.
 	 */
-	private function serveFile(string $repo, string $file): Response {
-		$repoPath = $this->getRepoPath($repo);
-		if ($repoPath === null) {
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	public function annexObject(string $repo, string $path): Response {
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, false);
+		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		// Sanitize file path to prevent directory traversal
-		$file = str_replace(['..', '\\'], ['', '/'], $file);
-		$filePath = $repoPath . '/' . $file;
+		$key = basename($path);
+		if ($key === '' || str_contains($key, '..')) {
+			return new DataResponse(['error' => 'Invalid key'], Http::STATUS_BAD_REQUEST);
+		}
 
-		if (!file_exists($filePath) || !is_file($filePath)) {
+		$contentPath = $this->repoGitService->getAnnexContentPath($folder->id, $key);
+		if ($contentPath === null) {
+			return new DataResponse(['error' => 'Content not present'], Http::STATUS_NOT_FOUND);
+		}
+
+		$response = new StreamResponse($contentPath);
+		$response->setHeaders([
+			'Content-Type' => 'application/octet-stream',
+			'Content-Length' => (string)filesize($contentPath),
+			'Cache-Control' => 'no-cache',
+		]);
+		return $response;
+	}
+
+	private function serveRepoFile(string $repo, string $file): Response {
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, false);
+		if ($folder === null) {
+			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		// no traversal: resolve within the bare repo only
+		$file = str_replace(['..', '\\'], '', $file);
+		$filePath = $this->repoGitService->getGitDir($folder->id) . '/' . $file;
+		if (!is_file($filePath)) {
 			return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
 		}
 
@@ -242,13 +272,22 @@ class GitRepoController extends Controller {
 		return $response;
 	}
 
-	/**
-	 * Objects endpoint (for fetching Git objects)
-	 */
-	#[NoAdminRequired]
-	#[NoCSRFRequired]
-	#[PublicPage]
-	public function getObject(string $repo, string $path): Response {
-		return $this->serveFile($repo, 'objects/' . $path);
+	// ------------------------------------------------------------------------
+
+	private function getRequestBody(): string {
+		$body = file_get_contents('php://input');
+		return $body === false ? '' : $body;
+	}
+
+	private function gitResultResponse(string $output, string $service): Response {
+		$response = new DataDisplayResponse($output, Http::STATUS_OK);
+		$response->addHeader('Content-Type', 'application/x-' . $service . '-result');
+		$response->addHeader('Cache-Control', 'no-cache');
+		return $response;
+	}
+
+	private function pktLine(string $data): string {
+		$len = strlen($data) + 4;
+		return sprintf('%04x', $len) . $data;
 	}
 }

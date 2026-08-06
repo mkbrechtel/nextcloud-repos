@@ -21,7 +21,7 @@ The MVP is a pure PHP Nextcloud app plus the stock `git` and `git-annex` binarie
 <repos_dir>/<id>/worktree    linked working tree — mounted as the repo folder
 ```
 
-**Git execution.** The app invokes the `git` and `git-annex` binaries directly against these directories (`proc_open`, streaming). Deliberately no backend interface or wrapper hierarchy in the MVP — the call sites are the abstraction. The binaries are a hard server dependency, declared in the app documentation and present in the container image.
+**Git execution.** The app invokes the `git` and `git-annex` binaries directly against these directories (`proc_open`, streaming). Every subprocess invocation is wrapped in a named PHP function on one command layer class — one function per git operation, no shell strings at call sites. That layer is the seam for a possible later native git implementation (objects in DB or storage backend) without touching callers. Beyond it, deliberately no backend interface or wrapper hierarchy in the MVP. The binaries are a hard server dependency, declared in the app documentation and present in the container image.
 
 **One credential.** Every endpoint — smart HTTP, WebDAV, annex object access — authenticates with the user's Nextcloud credentials or app password. A user enters one app password at `git clone` and git's credential helper reuses it for everything else.
 

@@ -7,6 +7,7 @@ declare(strict_types=1);
 namespace OCA\Repos\Folder;
 
 use OCA\Repos\Config\ConfigManager;
+use OCA\Repos\Git\RepoGitService;
 use OCA\Repos\Mount\FolderStorageManager;
 use OCA\Repos\AppInfo\Application;
 use OCP\Constants;
@@ -35,6 +36,7 @@ class RepoManager {
 		private readonly IAppConfig $appConfig,
 		private readonly LoggerInterface $logger,
 		private readonly IGroupManager $groupManager,
+		private readonly RepoGitService $repoGitService,
 	) {
 	}
 
@@ -100,6 +102,9 @@ class RepoManager {
 
 		// Initialize storage
 		try {
+			// the git structure must exist first: the worktree is the files directory
+			$this->repoGitService->createRepoStructure($id);
+
 			['storage_id' => $storageId, 'root_id' => $rootId] = $this->folderStorageManager->initRootAndStorageForFolder($id, true, $options);
 
 			// Update storage IDs
@@ -117,6 +122,7 @@ class RepoManager {
 			return $id;
 		} catch (\Exception $e) {
 			// Rollback on error
+			$this->repoGitService->deleteRepoStructure($id);
 			$this->configManager->deleteRepository($id);
 			throw $e;
 		}
@@ -129,6 +135,7 @@ class RepoManager {
 		$result = $this->configManager->deleteRepository($id);
 
 		if ($result) {
+			$this->repoGitService->deleteRepoStructure($id);
 			$this->eventDispatcher->dispatchTyped(
 				new CriticalActionPerformedEvent('The repository with id %d was removed', [$id])
 			);
@@ -247,14 +254,15 @@ class RepoManager {
 				$separateStorage = $repo['options']['separate-storage'] ?? true;
 				$storage = $this->folderStorageManager->getBaseStorageForFolder($repo['id'], $separateStorage);
 				$cache = $storage->getCache();
-				$rootCacheEntry = $cache->get('files');
+				// the storage is already jailed to files/, so the root is ''
+				$rootCacheEntry = $cache->get('');
 
 				if (!$rootCacheEntry) {
 					// Create a fake cache entry if it doesn't exist
 					$rootCacheEntry = new \OC\Files\Cache\CacheEntry([
 						'id' => $repo['root_id'] ?? 0,
 						'storage' => $repo['storage_id'] ?? 0,
-						'path' => 'files',
+						'path' => '',
 						'name' => basename($repo['mount_point']),
 						'mimetype' => 'httpd/unix-directory',
 						'size' => $repo['quota'] ?? -3,

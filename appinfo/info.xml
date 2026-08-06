@@ -61,7 +61,7 @@
 		<backend for="OCA\Repos\Mount\GroupFolderStorage">OCA\Repos\Trash\TrashBackend</backend>
 	</trash>
 
-	<versions>
-		<backend for="OCA\Repos\Mount\GroupFolderStorage">OCA\Repos\Versions\VersionsBackend</backend>
-	</versions>
+	<!-- No Nextcloud versions backend for repo folders: git itself is the
+	     version history (issue 24). The old backend also depended on a DB
+	     table removed in the refactoring. -->
 </info>

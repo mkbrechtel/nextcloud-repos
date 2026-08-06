@@ -79,7 +79,8 @@ class Application extends App implements IBootstrap {
 				$c->get(IConfig::class),
 				$c->get(IAppConfig::class),
 				$c->get(LoggerInterface::class),
-				$c->get(\OCP\IGroupManager::class)
+				$c->get(\OCP\IGroupManager::class),
+				$c->get(\OCA\Repos\Git\RepoGitService::class)
 			);
 		});
 
@@ -102,6 +103,8 @@ class Application extends App implements IBootstrap {
 				$c->get(IMountProviderCollection::class),
 				$c->get(IDBConnection::class),
 				$c->get(FolderStorageManager::class),
+				$c->get(\OCA\Repos\Git\RepoGitService::class),
+				$c->get(LoggerInterface::class),
 				$allowRootShare,
 				$enableEncryption
 			);

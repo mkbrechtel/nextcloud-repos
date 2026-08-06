@@ -91,11 +91,9 @@ class FolderStorageManager {
 		bool $init = false,
 		array $options = [],
 	): IStorage {
-		if ($this->primaryObjectStoreConfig->hasObjectStore()) {
-			$storage = $this->getBaseStorageForFolderSeparateStorageObject($folderId, $init, $options['bucket'] ?? null);
-		} else {
-			$storage = $this->getBaseStorageForFolderSeparateStorageLocal($folderId, $init);
-		}
+		// repo folders are git worktrees and always need a POSIX filesystem,
+		// regardless of the instance's primary storage (issue 22)
+		$storage = $this->getBaseStorageForFolderSeparateStorageLocal($folderId, $init);
 
 		if ($folder?->acl && $user) {
 			$aclManager = $this->aclManagerFactory->getACLManager($user);
@@ -256,6 +254,20 @@ class FolderStorageManager {
 				'storage' => $rootStorage,
 				'root' => $rootPath,
 			]);
+		}
+	}
+
+	/**
+	 * Rescan a repo folder's file cache after outside changes (e.g. a push
+	 * updated the worktree) and drop the worktree's .git pointer from the
+	 * cache so it never shows up in the Files app.
+	 */
+	public function scanFolder(int $folderId): void {
+		$storage = $this->getBaseStorageForFolder($folderId, true);
+		$storage->getScanner()->scan('');
+		$cache = $storage->getCache();
+		if ($cache->inCache('.git')) {
+			$cache->remove('.git');
 		}
 	}
 

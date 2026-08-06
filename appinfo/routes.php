@@ -28,5 +28,11 @@ return [
 
 		// Objects - Git object storage (for fallback to "dumb" HTTP protocol)
 		['name' => 'git_repo#getObject', 'url' => '/repos/{repo}/objects/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
+
+		// Annex objects - git-annex fetches keys over the clone URL (issue 25)
+		['name' => 'git_repo#annexObject', 'url' => '/repos/{repo}/annex/objects/{path}', 'verb' => 'GET', 'requirements' => ['path' => '.+']],
+
+		// File history for the Files app sidebar (issue 26)
+		['name' => 'history#fileHistory', 'url' => '/api/history/{folderId}', 'verb' => 'GET'],
 	],
 ];

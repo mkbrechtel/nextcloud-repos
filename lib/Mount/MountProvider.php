@@ -15,6 +15,8 @@ use OCA\Repos\Folder\FolderDefinition;
 use OCA\Repos\Folder\FolderDefinitionWithPermissions;
 use OCA\Repos\Folder\FolderManager;
 use OCA\Repos\Folder\RepoManager;
+use OCA\Repos\Git\RepoGitService;
+use Psr\Log\LoggerInterface;
 use OCP\Constants;
 use OCP\DB\QueryBuilder\IQueryBuilder;
 use OCP\Files\Cache\ICacheEntry;
@@ -41,6 +43,8 @@ class MountProvider implements IMountProvider {
 		private readonly IMountProviderCollection $mountProviderCollection,
 		private readonly IDBConnection $connection,
 		private readonly FolderStorageManager $folderStorageManager,
+		private readonly RepoGitService $repoGitService,
+		private readonly LoggerInterface $logger,
 		private readonly bool $allowRootShare,
 		private readonly bool $enableEncryption,
 	) {
@@ -249,6 +253,18 @@ class MountProvider implements IMountProvider {
 				'rootCacheEntry' => $rootCacheEntry,
 				'userSession' => $this->userSession,
 				'mountOwner' => $user,
+			]);
+		}
+
+		// commit-on-write: Nextcloud edits on the mounted worktree become
+		// git commits attributed to the acting user (issue 24)
+		if ($type === 'files') {
+			$quotaStorage = new RepoCommitWrapper([
+				'storage' => $quotaStorage,
+				'folder_id' => $folder->id,
+				'user' => $user,
+				'repo_git' => $this->repoGitService,
+				'logger' => $this->logger,
 			]);
 		}
 
