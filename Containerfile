@@ -24,6 +24,10 @@ RUN php occ config:system:set debug --value=true && \
     php occ config:system:set trusted_domains 1 --value=localhost && \
     php occ config:system:set trusted_domains 2 --value=127.0.0.1
 
+# Init may leave config/data owned by the wrong uid (build-time user mapping);
+# Apache runs as www-data and must be able to write both.
+RUN chown -R www-data:www-data /var/www/html/config /var/www/html/data
+
 WORKDIR /var/www/html
 EXPOSE 80
 CMD ["apache2-foreground"]

@@ -11,6 +11,7 @@ TEST_IMAGE_NAME = nextcloud-repos:browser-test
 PHP_TEST_IMAGE_NAME = nextcloud-repos:php-test
 RELEASE_IMAGE_NAME = nextcloud-repos:release
 RELEASE_FILE = repos-release.tar.gz
+DEV_PORT ?= 8067
 
 # Function to extract assets from container image
 # Usage: $(call extract-from-image,image-name,source-path,dest-path)
@@ -44,7 +45,7 @@ dev-start:  ## Build and start the development server
 	@echo "Starting Nextcloud Repos development server..."
 	podman run -d \
 	  --name "$(CONTAINER_NAME)" \
-	  -p 127.0.0.1:8080:80 \
+	  -p 127.0.0.1:$(DEV_PORT):80 \
 	  -v "$$(pwd):/var/www/html/custom_apps/repos:z" \
 	  --health-cmd "curl -f http://localhost/status.php || exit 1" \
 	  --health-interval 30s \
@@ -59,7 +60,7 @@ dev-start:  ## Build and start the development server
 	@echo ""
 	@echo "✓ Development server started successfully!"
 	@echo "  Container: $(CONTAINER_NAME)"
-	@echo "  URL: http://localhost:8080"
+	@echo "  URL: http://localhost:$(DEV_PORT)"
 	@echo "  Admin credentials: admin / admin"
 	@echo ""
 	@echo "Useful commands:"
