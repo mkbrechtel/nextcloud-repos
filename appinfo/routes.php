@@ -31,5 +31,8 @@ return [
 
 		// File history for the Files app sidebar (issue 26)
 		['name' => 'history#fileHistory', 'url' => '/api/history/{folderId}', 'verb' => 'GET'],
+
+		// OAuth2 authorization entry point for git credential helpers (issue 28)
+		['name' => 'oAuth#authorize', 'url' => '/oauth/authorize', 'verb' => 'GET'],
 	],
 ];

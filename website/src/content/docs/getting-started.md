@@ -29,6 +29,23 @@ Authenticate with your Nextcloud username and an app password
 (Settings → Security → Devices & sessions). Git's credential helper stores it
 once; every later `fetch`, `push` and `git annex get` reuses it.
 
+### Or log in through the browser
+
+With [git-credential-oauth](https://github.com/hickford/git-credential-oauth)
+installed (`apt install git-credential-oauth` on Debian/Ubuntu), cloning opens
+your Nextcloud in a browser, you click "Grant access" once, and tokens refresh
+themselves from then on — no password ever typed or stored.
+
+The administrator runs this once per instance to register the client and print
+the exact setup commands:
+
+```bash
+occ repos:oauth:setup
+```
+
+Both methods stay supported: app passwords work on headless machines (HPC
+nodes, CI) where no browser exists, OAuth is nicer on a workstation.
+
 ## Work from both sides
 
 - **Push:** commits appear in the Files app immediately.

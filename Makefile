@@ -105,6 +105,9 @@ test-all: test  ## Alias for 'test'
 test-e2e:  ## Run the end-to-end acceptance test against the running dev server
 	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/tests/e2e.sh
 
+test-oauth:  ## OAuth2 git login end-to-end against the running dev server
+	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/test/oauth/test.sh
+
 test-git:  ## Push a pinned upstream git.git release through the native backend
 	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/test/git/test.sh
 

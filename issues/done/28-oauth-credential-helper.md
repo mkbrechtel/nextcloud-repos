@@ -23,6 +23,11 @@ Support browser-based OAuth2 login as a second method: `git clone` triggers the 
 3. If OAuth2 access tokens are not accepted on the basic path, extend the controller's `authenticate()` to validate them (via the oauth2 app's token storage) and map to the user — same permission checks as today.
 4. Document both methods side by side in the website's getting-started page and record the OAuth flow as a demo scene.
 
+## Result
+Implemented. `occ repos:oauth:setup` registers the OAuth2 client (wildcard loopback redirect, `oauth2.enable_oc_clients` enabled) and prints the client's git config. Nextcloud's OAuth2 access tokens *are* app tokens, so the app's existing authentication accepts them unchanged — as basic-auth passwords and as bearer tokens; no controller change was needed.
+
+One shim was: git credential helpers redirect to `http://127.0.0.1:<port>` (RFC 8252), while Nextcloud's wildcard client accepts loopback redirects only under the literal host `localhost`. `/apps/repos/oauth/authorize` validates the loopback URI, normalizes the host, and hands over to Nextcloud's consent screen; non-loopback redirect URIs are rejected. `make test-oauth` covers registration, the shim (including rejection of external redirect URIs), code exchange, git clone with the access token, bearer auth, refresh rotation, and that password auth still works.
+
 ### Acceptance
 On a fresh machine with `git-credential-oauth` installed and the documented config applied: `git clone` opens the browser, one click authorizes, the clone completes, and `git annex get` works — no password ever typed. App-password auth continues to work unchanged.
 
