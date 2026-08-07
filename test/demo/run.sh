@@ -31,8 +31,11 @@ XVFB_PID=$!
 export DISPLAY="$SCREEN"
 sleep 1
 
-# hide the idle mouse pointer from the recording
+# hide the idle mouse pointer from the recording, and park the real X
+# pointer in the corner (selenium input is synthesized; the X pointer
+# otherwise sits rendered at dead center)
 unclutter --timeout 1 --start-hidden &
+xdotool mousemove 1919 1079 || true
 
 # --- web terminal (xterm.js served by the aiohttp PTY bridge) -----------------
 mkdir -p /work

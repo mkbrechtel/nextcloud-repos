@@ -45,13 +45,13 @@ runuser -u www-data -- git -C "/var/www/html/data/__repos/$ID/repo.git" config a
 pass "repo folder created (id $ID)"
 
 # --- unauthenticated access is refused --------------------------------------
-CODE=$(curl -s -o /dev/null -w '%{http_code}' "$NC_URL/index.php/apps/repos/repos/$REPO/info/refs?service=git-upload-pack")
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$NC_URL/apps/repos/repos/$REPO/info/refs?service=git-upload-pack")
 [ "$CODE" = "401" ] || fail "expected 401 for anonymous, got $CODE"
 pass "anonymous access gets 401 challenge"
 
 # --- clone over Nextcloud HTTP -----------------------------------------------
 rm -rf "$CLONE"
-git clone -q "$NC_URL/index.php/apps/repos/repos/$REPO" "$CLONE"
+git clone -q "$NC_URL/apps/repos/repos/$REPO" "$CLONE"
 cd "$CLONE"
 git log --oneline | grep -q "Initialize repository" || fail "seed commit missing in clone"
 pass "clone over Nextcloud HTTP"
@@ -99,14 +99,14 @@ if command -v datalad >/dev/null; then
 	# datalad wires its own askpass into git-annex, which can feed empty
 	# credentials and make git erase the shared store on the resulting 401;
 	# embed credentials in the URL for this step (test environment only)
-	datalad clone "http://$USER:$PASS@$NC_HOST/index.php/apps/repos/repos/$REPO" /tmp/e2e-datalad >/dev/null 2>&1 \
+	datalad clone "http://$USER:$PASS@$NC_HOST/apps/repos/repos/$REPO" /tmp/e2e-datalad >/dev/null 2>&1 \
 		|| fail "datalad clone failed"
 	# Credentials embedded in the URL break git-annex's auth flow (and
 	# datalad's askpass breaks the probe during clone, leaving annex-ignore
 	# set). Switch to the clean URL + stored credential, which is the
 	# documented client setup anyway; datalad-native credentials are
 	# follow-up work (issue 27).
-	git -C /tmp/e2e-datalad remote set-url origin "$NC_URL/index.php/apps/repos/repos/$REPO"
+	git -C /tmp/e2e-datalad remote set-url origin "$NC_URL/apps/repos/repos/$REPO"
 	git -C /tmp/e2e-datalad config --unset-all remote.origin.annex-ignore >/dev/null 2>&1 || true
 	printf "protocol=http\nhost=$NC_HOST\nusername=%s\npassword=%s\n" "$USER" "$PASS" | git credential approve
 	(cd /tmp/e2e-datalad && git annex get big.bin >/dev/null 2>&1) || fail "annex get in datalad dataset failed"
@@ -120,7 +120,7 @@ else
 fi
 
 # --- history API --------------------------------------------------------------
-HIST=$(curl -s -u "$USER:$PASS" "$NC_URL/index.php/apps/repos/api/history/$ID?path=notes.txt")
+HIST=$(curl -s -u "$USER:$PASS" "$NC_URL/apps/repos/api/history/$ID?path=notes.txt")
 echo "$HIST" | grep -q "notes.txt via Nextcloud" || fail "history API missing commit: $HIST"
 pass "history API returns file history"
 

@@ -22,7 +22,7 @@ git working tree on the server.
 ## Clone it
 
 ```bash
-git clone https://cloud.example.org/index.php/apps/repos/repos/mydata
+git clone https://cloud.example.org/apps/repos/repos/mydata
 ```
 
 Authenticate with your Nextcloud username and an app password
@@ -45,7 +45,7 @@ git annex get bigfile.h5
 - **Datalad:**
 
 ```bash
-datalad clone https://cloud.example.org/index.php/apps/repos/repos/mydata
+datalad clone https://cloud.example.org/apps/repos/repos/mydata
 ```
 
 ## File history in the Files app

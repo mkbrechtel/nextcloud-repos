@@ -121,7 +121,7 @@ def main():
     global MAIN_TAB
     driver = make_driver()
     MAIN_TAB = driver.current_window_handle
-    clone_url = f'{TARGET}/index.php/apps/repos/repos/{REPO}'
+    clone_url = f'{TARGET}/apps/repos/repos/{REPO}'
 
     # --- opening ---
     title_card(driver, 'Nextcloud Repositories',
