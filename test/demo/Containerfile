@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 #
 # Demo video recorder: Debian trixie, apt packages only.
-# Chromium driven by Selenium, a ttyd (xterm.js) web terminal for the git side,
+# Chromium driven by Selenium, an xterm.js web terminal (libjs-xterm + a small
+# aiohttp PTY bridge — ttyd is not packaged in trixie) for the git side,
 # Xvfb as the virtual screen, ffmpeg as the screen grabber.
 
 FROM docker.io/debian:trixie
@@ -11,9 +12,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
     chromium-driver \
     python3-selenium \
+    python3-aiohttp \
+    libjs-xterm \
     xvfb \
     ffmpeg \
-    ttyd \
     git \
     git-annex \
     curl \
@@ -23,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     procps \
     && rm -rf /var/lib/apt/lists/*
 
-COPY run.sh demo.py /demo/
+COPY run.sh demo.py term_server.py /demo/
 WORKDIR /demo
 
 # TARGET_URL, DEMO_USER, DEMO_PASS configure the instance under test

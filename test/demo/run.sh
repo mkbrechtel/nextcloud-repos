@@ -32,8 +32,8 @@ XVFB_PID=$!
 export DISPLAY="$SCREEN"
 sleep 1
 
-# --- web terminal (ttyd serves xterm.js) --------------------------------------
-ttyd --port 7681 --writable -t 'fontSize=22' -t 'theme={"background":"#1e1e2e"}' bash &
+# --- web terminal (xterm.js served by the aiohttp PTY bridge) -----------------
+python3 /demo/term_server.py &
 TTYD_PID=$!
 sleep 1
 
