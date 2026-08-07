@@ -70,6 +70,7 @@ def title_card(driver, title, subtitle='', seconds=3.5):
              color:#7dd3fc; border:1px solid rgba(125,211,252,.45);
              border-radius:999px; padding:10px 30px 10px 34px;
              background:rgba(8,20,45,.5); }}
+      .badge::before {{ content:'●'; color:#f87171; margin-right:14px; }}
       h1 {{ font-size:68px; margin:0 0 10px; max-width:76vw; font-weight:700;
              letter-spacing:-0.01em; }}
       .rule {{ width:120px; height:4px; border-radius:2px; margin:18px 0 26px;
