@@ -44,6 +44,12 @@ def make_driver():
     # automated-demo disclosure instead
     options.add_experimental_option('excludeSwitches', ['enable-automation'])
     options.add_experimental_option('useAutomationExtension', False)
+    # no save-password popup over the login scene
+    options.add_argument('--password-store=basic')
+    options.add_experimental_option('prefs', {
+        'credentials_enable_service': False,
+        'profile.password_manager_enabled': False,
+    })
     service = ChromiumService(executable_path='/usr/bin/chromedriver')
     return webdriver.Chrome(options=options, service=service)
 
@@ -60,10 +66,10 @@ def title_card(driver, title, subtitle='', seconds=3.5):
                linear-gradient(150deg,#0b1220 0%,#0f2249 55%,#123a7a 100%);
              color:#f8fafc; font-family:'Liberation Sans',sans-serif; }}
       .badge {{ position:absolute; top:44px; left:50%; transform:translateX(-50%);
-             font-size:17px; letter-spacing:.22em; text-transform:uppercase;
+             font-size:18px; letter-spacing:.3em; text-transform:uppercase;
              color:#7dd3fc; border:1px solid rgba(125,211,252,.45);
-             border-radius:999px; padding:10px 26px; background:rgba(8,20,45,.5); }}
-      .badge::before {{ content:'●'; color:#f87171; margin-right:12px; }}
+             border-radius:999px; padding:10px 30px 10px 34px;
+             background:rgba(8,20,45,.5); }}
       h1 {{ font-size:68px; margin:0 0 10px; max-width:76vw; font-weight:700;
              letter-spacing:-0.01em; }}
       .rule {{ width:120px; height:4px; border-radius:2px; margin:18px 0 26px;
@@ -73,7 +79,7 @@ def title_card(driver, title, subtitle='', seconds=3.5):
              font-size:19px; color:#5b7db1; }}
       .foot b {{ color:#8fb4e8; font-weight:600; }}
     </style></head><body>
-      <div class="badge">Automated demo &mdash; recorded unattended</div>
+      <div class="badge">Demo</div>
       <h1>{title}</h1><div class="rule"></div><p>{subtitle}</p>
       <div class="foot"><b>Nextcloud Repositories</b> &nbsp;&middot;&nbsp; scripted with Selenium, played against a live instance</div>
     </body></html>'''
