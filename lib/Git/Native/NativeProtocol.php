@@ -127,9 +127,11 @@ class NativeProtocol {
 		$applied = [];
 		$results = [];
 		foreach ($commands as $command) {
-			// the git-annex branch is server-owned bookkeeping: Nextcloud is
-			// the annex store and sole writer of location logs (issue 29)
-			if ($command['ref'] === 'refs/heads/git-annex' || str_ends_with($command['ref'], '/git-annex')) {
+			// refs/heads/git-annex is server-owned bookkeeping. Everything
+			// else — including synced/git-annex — is stored passively so
+			// clients can sync annex state through the server; they union
+			// merge among themselves, the server merges nothing (issue 29)
+			if ($command['ref'] === 'refs/heads/git-annex') {
 				$results[] = 'ng ' . $command['ref'] . ' the git-annex branch is maintained by the server';
 				continue;
 			}

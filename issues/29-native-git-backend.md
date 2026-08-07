@@ -31,7 +31,7 @@ An internal, deliberately minimal git implementation in PHP — enough for this 
 All repos are native. e2e passes including annex and datalad; the real-repo test pushes and re-clones the pinned git v2.47.3 release tree (4537 files) fsck-clean.
 
 ## Nextcloud is a store, not an annex peer
-The instance serves its files and presents the annex; it deliberately implements no further git-annex features. Content enters through Nextcloud's own interfaces (Files app, WebDAV, pushes of git data) — never by the server fetching from other remotes; the native code performs no outbound requests at all. Clones retrieve content over the clone URL and may drop or copy it among themselves freely; the server's location log only ever records the server's own holdings. The `git-annex` branch is server-owned bookkeeping: pushes to it (including `synced/git-annex`) are rejected, so client-side annex state can never overwrite the store's records.
+The instance serves its files, presents the annex, and passively relays annex state; it performs no sync logic of its own. Content enters through Nextcloud's own interfaces (Files app, WebDAV, pushes of git data) — never by the server fetching from other remotes; the native code performs no outbound requests at all. Clients sync their annex *through* the server the standard way: they push `synced/git-annex` (and other branches), which the server stores as plain refs; other clients fetch and union-merge locally. The server merges nothing, fetches nothing, and never copies content on its own initiative. Only `refs/heads/git-annex` is server-owned — it carries the store's own location log and uuid, so client pushes to that one ref are rejected; the server's records stay authoritative about what the server holds.
 
 # Considerations
 

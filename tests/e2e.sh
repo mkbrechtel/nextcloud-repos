@@ -93,6 +93,15 @@ CLIENT_MD5=$(md5sum big.bin | cut -d' ' -f1)
 [ "$SERVER_MD5" = "$CLIENT_MD5" ] || fail "annexed content checksum mismatch"
 pass "git annex get over the clone URL, checksum verified"
 
+# --- passive annex-state relay ------------------------------------------------
+# clients sync annex state through the server via synced/git-annex; the
+# server's own git-annex branch stays server-owned
+git push -q origin git-annex:synced/git-annex || fail "synced/git-annex push not accepted"
+REJECT_OUT=$(git push origin git-annex 2>&1 || true)
+echo "$REJECT_OUT" | grep -q "maintained by the server" \
+	|| fail "direct git-annex branch push was not rejected: $REJECT_OUT"
+pass "annex state relays passively; server branch stays protected"
+
 # --- datalad end to end -------------------------------------------------------
 if command -v datalad >/dev/null; then
 	rm -rf /tmp/e2e-datalad
