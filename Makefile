@@ -105,8 +105,8 @@ test-all: test  ## Alias for 'test'
 test-e2e:  ## Run the end-to-end acceptance test against the running dev server
 	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/tests/e2e.sh
 
-test-git:  ## Push a pinned upstream git.git release through the app (BACKEND=native|binary)
-	podman exec -e BACKEND="$${BACKEND:-native}" "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/test/git/test.sh
+test-git:  ## Push a pinned upstream git.git release through the native backend
+	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/test/git/test.sh
 
 DEMO_TARGET ?= http://127.0.0.1:$(DEV_PORT)
 demo-video:  ## Record the walkthrough video (set DEMO_TARGET/DEMO_PASS for other instances)

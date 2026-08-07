@@ -69,6 +69,11 @@ class Application extends App implements IBootstrap {
 				$c->get(\OCP\Files\AppData\IAppDataFactory::class)->get('repos')
 			);
 		});
+		$context->registerService(\OCA\Repos\Git\Native\AnnexStore::class, function (ContainerInterface $c): \OCA\Repos\Git\Native\AnnexStore {
+			return new \OCA\Repos\Git\Native\AnnexStore(
+				$c->get(\OCP\Files\AppData\IAppDataFactory::class)->get('repos')
+			);
+		});
 
 		// Register ConfigManager and RepoManager
 		$context->registerService(ConfigManager::class, function (ContainerInterface $c): ConfigManager {
@@ -86,7 +91,6 @@ class Application extends App implements IBootstrap {
 				$c->get(IAppConfig::class),
 				$c->get(LoggerInterface::class),
 				$c->get(\OCP\IGroupManager::class),
-				$c->get(\OCA\Repos\Git\RepoGitService::class),
 				$c->get(\OCA\Repos\Git\Native\NativeGitService::class)
 			);
 		});
@@ -110,7 +114,7 @@ class Application extends App implements IBootstrap {
 				$c->get(IMountProviderCollection::class),
 				$c->get(IDBConnection::class),
 				$c->get(FolderStorageManager::class),
-				$c->get(\OCA\Repos\Git\RepoGitService::class),
+				$c->get(\OCA\Repos\Git\Native\NativeGitService::class),
 				$c->get(LoggerInterface::class),
 				$allowRootShare,
 				$enableEncryption

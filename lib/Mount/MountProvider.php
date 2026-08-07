@@ -15,7 +15,7 @@ use OCA\Repos\Folder\FolderDefinition;
 use OCA\Repos\Folder\FolderDefinitionWithPermissions;
 use OCA\Repos\Folder\FolderManager;
 use OCA\Repos\Folder\RepoManager;
-use OCA\Repos\Git\RepoGitService;
+use OCA\Repos\Git\Native\NativeGitService;
 use Psr\Log\LoggerInterface;
 use OCP\Constants;
 use OCP\DB\QueryBuilder\IQueryBuilder;
@@ -43,7 +43,7 @@ class MountProvider implements IMountProvider {
 		private readonly IMountProviderCollection $mountProviderCollection,
 		private readonly IDBConnection $connection,
 		private readonly FolderStorageManager $folderStorageManager,
-		private readonly RepoGitService $repoGitService,
+		private readonly NativeGitService $nativeGitService,
 		private readonly LoggerInterface $logger,
 		private readonly bool $allowRootShare,
 		private readonly bool $enableEncryption,
@@ -259,13 +259,11 @@ class MountProvider implements IMountProvider {
 		// commit-on-write: Nextcloud edits on the mounted folder become
 		// git commits attributed to the acting user (issue 24)
 		if ($type === 'files') {
-			$isNative = \OCA\Repos\Git\Native\NativeGitService::isNative($folder->options);
 			$quotaStorage = new RepoCommitWrapper([
 				'storage' => $quotaStorage,
 				'folder_id' => $folder->id,
 				'user' => $user,
-				'repo_git' => $this->repoGitService,
-				'native_git' => $isNative ? \OCP\Server::get(\OCA\Repos\Git\Native\NativeGitService::class) : null,
+				'native_git' => $this->nativeGitService,
 				'logger' => $this->logger,
 			]);
 		}

@@ -7,19 +7,17 @@
 # commit on top, and verify round-trips. Runs INSIDE the dev container:
 #   podman exec nextcloud-repos-dev bash /var/www/html/custom_apps/repos/test/git/test.sh
 #
-# BACKEND=native (default) exercises the native PHP backend; BACKEND=binary
-# runs the same flow against the git-binary backend.
 
 set -euo pipefail
 
 GIT_TAG="${GIT_TAG:-v2.47.3}"
 GIT_UPSTREAM="${GIT_UPSTREAM:-https://github.com/git/git.git}"
-BACKEND="${BACKEND:-native}"
+
 NC_HOST="127.0.0.1"
 NC_URL="http://$NC_HOST"
 USER=admin
 PASS=admin
-REPO="gitmirror-$BACKEND"
+REPO="gitmirror"
 OCC="runuser -u www-data -- php /var/www/html/occ"
 
 pass() { echo "PASS: $1"; }
@@ -45,14 +43,14 @@ EXISTING=$($OCC repos:list --output=json 2>/dev/null | php -r '$d=json_decode(st
 if [ -n "$EXISTING" ]; then
 	$OCC repos:delete "$EXISTING" -f >/dev/null
 fi
-NATIVE_FLAG=""
-[ "$BACKEND" = "native" ] && NATIVE_FLAG="--native"
-ID=$($OCC repos:create "$REPO" $NATIVE_FLAG)
+
+
+ID=$($OCC repos:create "$REPO")
 $OCC repos:group "$ID" admin write >/dev/null
-pass "repo folder created (id $ID, backend $BACKEND)"
+pass "repo folder created (id $ID, native backend)"
 
 # --- import the release tree as one commit and push ---------------------------
-WORK=/tmp/gitmirror-work-$BACKEND
+WORK=/tmp/gitmirror-work
 rm -rf "$WORK"
 git init -q -b main "$WORK"
 (cd "$SRC" && git archive "$GIT_TAG") | tar -x -C "$WORK"
@@ -69,7 +67,7 @@ time git push -q nextcloud main
 pass "release tree pushed ($FILE_COUNT files in one commit)"
 
 # --- clone it back and verify --------------------------------------------------
-CLONE=/tmp/gitmirror-clone-$BACKEND
+CLONE=/tmp/gitmirror-clone
 rm -rf "$CLONE"
 time git clone -q "$NC_URL/apps/repos/$REPO.git" "$CLONE"
 cd "$CLONE"
@@ -102,4 +100,4 @@ curl -s -u "$USER:$PASS" "$NC_URL/remote.php/dav/files/$USER/$REPO/NEXTCLOUD.md"
 pass "Files app shows the tree and the artificial commit"
 
 echo
-echo "ALL GIT-MIRROR TESTS PASSED ($BACKEND backend, $GIT_TAG)"
+echo "ALL GIT-MIRROR TESTS PASSED (native backend, $GIT_TAG)"

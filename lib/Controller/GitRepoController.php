@@ -11,10 +11,7 @@ namespace OCA\Repos\Controller;
 
 use OCA\Repos\Folder\FolderDefinitionWithPermissions;
 use OCA\Repos\Folder\RepoManager;
-use OCA\Repos\Git\GitCli;
-use OCA\Repos\Git\GitException;
-use OCA\Repos\Git\RepoGitService;
-use OCA\Repos\Mount\FolderStorageManager;
+use OCA\Repos\Git\Native\NativeGitService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -32,20 +29,16 @@ use OCP\Security\Bruteforce\IThrottler;
 use Psr\Log\LoggerInterface;
 
 /**
- * Serves Git repositories over HTTP (smart protocol) and annex objects over
- * the same URL, authenticated with Nextcloud credentials / app passwords.
- *
- * https://git-scm.com/docs/http-protocol
+ * Serves git repositories over HTTP — smart protocol and annex objects,
+ * entirely through the native PHP backend (issue 29) — authenticated with
+ * Nextcloud credentials / app passwords.
  */
 class GitRepoController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly RepoManager $repoManager,
-		private readonly RepoGitService $repoGitService,
-		private readonly \OCA\Repos\Git\Native\NativeGitService $nativeGit,
-		private readonly GitCli $git,
-		private readonly FolderStorageManager $folderStorageManager,
+		private readonly NativeGitService $nativeGit,
 		private readonly IUserSession $userSession,
 		private readonly IThrottler $throttler,
 		private readonly LoggerInterface $logger,
@@ -55,10 +48,6 @@ class GitRepoController extends Controller {
 
 	// ---- authentication and authorization ---------------------------------
 
-	/**
-	 * Git clients speak HTTP basic auth: challenge when anonymous, validate
-	 * credentials (including app passwords) when given.
-	 */
 	private function authenticate(): ?IUser {
 		if ($this->userSession->isLoggedIn()) {
 			return $this->userSession->getUser();
@@ -72,9 +61,9 @@ class GitRepoController extends Controller {
 
 		/** @var \OC\User\Session $session */
 		$session = $this->userSession;
-		// retry once: rapid successive logins (git-annex probes both object
-		// layouts in parallel) can hit transient DB contention that reads as
-		// a failed login and makes the client discard its stored credential
+		// retry once: rapid successive logins (annex clients probe in
+		// parallel) can hit transient contention that reads as a failed
+		// login and makes clients discard their stored credential
 		for ($attempt = 0; $attempt < 2; $attempt++) {
 			try {
 				if ($session->logClientIn($loginName, $password, $this->request, $this->throttler)) {
@@ -94,12 +83,8 @@ class GitRepoController extends Controller {
 		return $response;
 	}
 
-	/**
-	 * Resolve a repo URL name (mount point or numeric id) to a folder the
-	 * user may access with the needed permission.
-	 */
 	private function findAuthorizedFolder(string $repo, IUser $user, bool $write): ?FolderDefinitionWithPermissions {
-		// support the conventional .git suffix on clone URLs
+		// clone URLs carry the conventional .git suffix
 		if (str_ends_with($repo, '.git')) {
 			$repo = substr($repo, 0, -4);
 		}
@@ -131,22 +116,8 @@ class GitRepoController extends Controller {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
-			$refs = $this->nativeGit->advertise($folder->id, $service);
-		} else {
-			$gitDir = $this->repoGitService->getGitDir($folder->id);
-			try {
-				$refs = $service === 'git-upload-pack'
-					? $this->git->uploadPackAdvertise($gitDir)
-					: $this->git->receivePackAdvertise($gitDir);
-			} catch (GitException $e) {
-				$this->logger->error('git advertise failed', ['app' => 'repos', 'exception' => $e]);
-				return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-			}
-		}
-
-		$serviceHeader = '# service=' . $service . "\n";
-		$content = $this->pktLine($serviceHeader) . '0000' . $refs;
+		$content = $this->pktLine('# service=' . $service . "\n") . '0000'
+			. $this->nativeGit->advertise($folder->id, $service);
 
 		$response = new DataDisplayResponse($content, Http::STATUS_OK);
 		$response->addHeader('Content-Type', 'application/x-' . $service . '-advertisement');
@@ -166,19 +137,7 @@ class GitRepoController extends Controller {
 		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
-
-		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
-			return $this->gitResultResponse($this->nativeGit->uploadPack($folder->id, $this->getRequestBody()), 'git-upload-pack');
-		}
-
-		try {
-			$output = $this->git->uploadPack($this->repoGitService->getGitDir($folder->id), $this->getRequestBody());
-		} catch (GitException $e) {
-			$this->logger->error('upload-pack failed', ['app' => 'repos', 'exception' => $e]);
-			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		return $this->gitResultResponse($output, 'git-upload-pack');
+		return $this->gitResultResponse($this->nativeGit->uploadPack($folder->id, $this->getRequestBody()), 'git-upload-pack');
 	}
 
 	#[NoAdminRequired]
@@ -193,131 +152,90 @@ class GitRepoController extends Controller {
 		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
-
-		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
-			return $this->gitResultResponse($this->nativeGit->receivePack($folder->id, $this->getRequestBody()), 'git-receive-pack');
-		}
-
-		try {
-			$output = $this->git->receivePack($this->repoGitService->getGitDir($folder->id), $this->getRequestBody());
-		} catch (GitException $e) {
-			$this->logger->error('receive-pack failed', ['app' => 'repos', 'exception' => $e]);
-			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
-		}
-
-		// materialize the pushed state in the mounted worktree
-		try {
-			$this->repoGitService->syncWorktreeAfterPush($folder->id);
-			$this->folderStorageManager->scanFolder($folder->id);
-		} catch (\Exception $e) {
-			$this->logger->error('worktree sync after push failed', ['app' => 'repos', 'exception' => $e]);
-		}
-
-		return $this->gitResultResponse($output, 'git-receive-pack');
+		return $this->gitResultResponse($this->nativeGit->receivePack($folder->id, $this->getRequestBody()), 'git-receive-pack');
 	}
 
-	// ---- dumb protocol + annex objects ------------------------------------
+	// ---- dumb protocol pieces + annex objects ------------------------------
 
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function getHead(string $repo): Response {
-		return $this->serveRepoFile($repo, 'HEAD');
+		return $this->withReadableFolder($repo, function (): Response {
+			return new DataDisplayResponse("ref: refs/heads/main\n", Http::STATUS_OK, ['Content-Type' => 'text/plain']);
+		});
+	}
+
+	/**
+	 * git-annex probes the repo config to learn the annex uuid.
+	 */
+	#[NoAdminRequired]
+	#[NoCSRFRequired]
+	#[PublicPage]
+	public function getConfig(string $repo): Response {
+		return $this->withReadableFolder($repo, function (FolderDefinitionWithPermissions $folder): Response {
+			return new DataDisplayResponse(
+				$this->nativeGit->repoConfigText($folder->id),
+				Http::STATUS_OK,
+				['Content-Type' => 'text/plain'],
+			);
+		});
 	}
 
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function getObject(string $repo, string $path): Response {
-		return $this->serveRepoFile($repo, 'objects/' . $path);
+		// loose-object dumb protocol is not offered; clients use smart HTTP
+		return $this->withReadableFolder($repo, function (): Response {
+			return new DataResponse(['error' => 'Use the smart protocol'], Http::STATUS_NOT_FOUND);
+		});
 	}
 
 	/**
-	 * git-annex probes the repo's config over dumb HTTP to learn the annex
-	 * uuid; without it a clone won't treat the origin as an annex peer.
-	 */
-	#[NoAdminRequired]
-	#[NoCSRFRequired]
-	#[PublicPage]
-	public function getConfig(string $repo): Response {
-		return $this->serveRepoFile($repo, 'config');
-	}
-
-	/**
-	 * Annex objects over the clone URL (issue 25): git-annex requests
-	 * annex/objects/<hashdirs>/<key>/<key> on http remotes. The key is the
-	 * last path component; we resolve its content location instead of
-	 * trusting the requested hash directories.
+	 * Annex objects over the clone URL: the key is the last path component;
+	 * content streams from the annex store (issue 29).
 	 */
 	#[NoAdminRequired]
 	#[NoCSRFRequired]
 	#[PublicPage]
 	public function annexObject(string $repo, string $path): Response {
-		$user = $this->authenticate();
-		if ($user === null) {
-			return $this->unauthorized();
-		}
-		$folder = $this->findAuthorizedFolder($repo, $user, false);
-		if ($folder === null) {
-			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$key = basename($path);
-		if ($key === '' || str_contains($key, '..')) {
-			return new DataResponse(['error' => 'Invalid key'], Http::STATUS_BAD_REQUEST);
-		}
-
-		$contentPath = $this->repoGitService->getAnnexContentPath($folder->id, $key);
-		if ($contentPath === null) {
-			return new DataResponse(['error' => 'Content not present'], Http::STATUS_NOT_FOUND);
-		}
-
-		$response = new StreamResponse($contentPath);
-		$response->setHeaders([
-			'Content-Type' => 'application/octet-stream',
-			'Content-Length' => (string)filesize($contentPath),
-			'Cache-Control' => 'no-cache',
-		]);
-		return $response;
-	}
-
-	private function serveRepoFile(string $repo, string $file): Response {
-		$user = $this->authenticate();
-		if ($user === null) {
-			return $this->unauthorized();
-		}
-		$folder = $this->findAuthorizedFolder($repo, $user, false);
-		if ($folder === null) {
-			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
-			// synthesize the dumb-protocol files the native backend has no disk form for
-			if ($file === 'HEAD') {
-				return new DataDisplayResponse("ref: refs/heads/main\n", Http::STATUS_OK, ['Content-Type' => 'text/plain']);
+		return $this->withReadableFolder($repo, function (FolderDefinitionWithPermissions $folder) use ($path): Response {
+			$key = basename($path);
+			if ($key === '' || str_contains($key, '..')) {
+				return new DataResponse(['error' => 'Invalid key'], Http::STATUS_BAD_REQUEST);
 			}
-			if ($file === 'config') {
-				return new DataDisplayResponse("[core]\n\trepositoryformatversion = 0\n\tbare = true\n", Http::STATUS_OK, ['Content-Type' => 'text/plain']);
+			$stream = $this->nativeGit->annexContentStream($folder->id, $key);
+			if ($stream === null) {
+				return new DataResponse(['error' => 'Content not present'], Http::STATUS_NOT_FOUND);
 			}
-			return new DataResponse(['error' => 'Not available on the native backend'], Http::STATUS_NOT_FOUND);
-		}
-
-		// no traversal: resolve within the bare repo only
-		$file = str_replace(['..', '\\'], '', $file);
-		$filePath = $this->repoGitService->getGitDir($folder->id) . '/' . $file;
-		if (!is_file($filePath)) {
-			return new DataResponse(['error' => 'File not found'], Http::STATUS_NOT_FOUND);
-		}
-
-		$response = new StreamResponse($filePath);
-		$response->setHeaders([
-			'Content-Type' => 'application/octet-stream',
-			'Cache-Control' => 'no-cache',
-		]);
-		return $response;
+			$size = $this->nativeGit->annexContentSize($folder->id, $key);
+			$response = new StreamResponse($stream);
+			$headers = [
+				'Content-Type' => 'application/octet-stream',
+				'Cache-Control' => 'no-cache',
+			];
+			if ($size !== null) {
+				$headers['Content-Length'] = (string)$size;
+			}
+			$response->setHeaders($headers);
+			return $response;
+		});
 	}
 
 	// ------------------------------------------------------------------------
+
+	private function withReadableFolder(string $repo, callable $handler): Response {
+		$user = $this->authenticate();
+		if ($user === null) {
+			return $this->unauthorized();
+		}
+		$folder = $this->findAuthorizedFolder($repo, $user, false);
+		if ($folder === null) {
+			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
+		return $handler($folder);
+	}
 
 	private function getRequestBody(): string {
 		$body = file_get_contents('php://input');

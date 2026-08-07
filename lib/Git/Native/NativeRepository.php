@@ -39,6 +39,82 @@ class NativeRepository {
 		return $this->refs->get($folderId, self::HEAD_REF);
 	}
 
+	public function refTip(int $folderId, string $ref): ?string {
+		return $this->refs->get($folderId, $ref);
+	}
+
+	/**
+	 * Commit changes on an arbitrary branch (creating it if absent) —
+	 * used for the hand-built git-annex branch.
+	 *
+	 * @param array<string, string|null> $changes
+	 */
+	public function commitChangesOnRef(
+		int $folderId,
+		string $ref,
+		array $changes,
+		string $message,
+		int $timestamp,
+	): ?string {
+		$tip = $this->refs->get($folderId, $ref);
+		$flat = [];
+		if ($tip !== null) {
+			$flat = $this->listTreeOfCommit($folderId, $tip);
+		}
+		$dirty = false;
+		foreach ($changes as $path => $content) {
+			if ($content === null) {
+				if (isset($flat[$path])) {
+					unset($flat[$path]);
+					$dirty = true;
+				}
+				continue;
+			}
+			$blobSha = Objects::hash('blob', $content);
+			if (($flat[$path]['sha'] ?? null) === $blobSha) {
+				continue;
+			}
+			$this->objects->write($folderId, 'blob', $content);
+			$flat[$path] = ['mode' => '100644', 'sha' => $blobSha];
+			$dirty = true;
+		}
+		if (!$dirty) {
+			return $tip;
+		}
+		$treeSha = $this->writeTreeFromFlat($folderId, $flat);
+		$commitContent = Objects::encodeCommit(
+			$treeSha, $tip !== null ? [$tip] : [],
+			self::COMMITTER, self::COMMITTER_MAIL, $timestamp, $message,
+		);
+		$sha = $this->objects->write($folderId, 'commit', $commitContent);
+		$this->refs->set($folderId, $ref, $sha);
+		return $sha;
+	}
+
+	/**
+	 * Read a blob at a path in a branch tip's tree.
+	 */
+	public function readPathAtRef(int $folderId, string $ref, string $path): ?string {
+		$tip = $this->refs->get($folderId, $ref);
+		if ($tip === null) {
+			return null;
+		}
+		$flat = $this->listTreeOfCommit($folderId, $tip);
+		$sha = $flat[$path]['sha'] ?? null;
+		if ($sha === null) {
+			return null;
+		}
+		$blob = $this->objects->read($folderId, $sha);
+		return $blob !== null ? $blob['content'] : null;
+	}
+
+	/**
+	 * @return array<string, array{mode: string, sha: string}>
+	 */
+	public function listTreeOfCommit(int $folderId, string $commitSha): array {
+		return $this->listTree($folderId, $commitSha);
+	}
+
 	/**
 	 * Full recursive listing of a commit's tree: path => ['mode','sha'].
 	 *

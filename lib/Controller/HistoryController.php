@@ -9,7 +9,7 @@ declare(strict_types=1);
 namespace OCA\Repos\Controller;
 
 use OCA\Repos\Folder\RepoManager;
-use OCA\Repos\Git\RepoGitService;
+use OCA\Repos\Git\Native\NativeGitService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -19,14 +19,15 @@ use OCP\IRequest;
 use OCP\IUserSession;
 
 /**
- * Read-only file history for the Files app sidebar (issue 26).
+ * Read-only file history for the Files app sidebar (issue 26), served from
+ * the native backend's commit walk and annex state.
  */
 class HistoryController extends Controller {
 	public function __construct(
 		string $appName,
 		IRequest $request,
 		private readonly RepoManager $repoManager,
-		private readonly RepoGitService $repoGitService,
+		private readonly NativeGitService $nativeGit,
 		private readonly IUserSession $userSession,
 	) {
 		parent::__construct($appName, $request);
@@ -58,32 +59,10 @@ class HistoryController extends Controller {
 		if ($folder === null) {
 			return new DataResponse(['error' => 'Not found'], Http::STATUS_NOT_FOUND);
 		}
-		$folderId = $folder->id;
-
-		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
-			$native = \OCP\Server::get(\OCA\Repos\Git\Native\NativeGitService::class);
-			return new DataResponse([
-				'history' => $native->history($folderId, $path),
-				'annex' => null,
-			]);
-		}
-
-		$history = $this->repoGitService->getHistory($folderId, $path);
-
-		$annex = null;
-		if ($path !== '') {
-			$key = $this->repoGitService->getAnnexKey($folderId, $path);
-			if ($key !== null && $key !== '') {
-				$annex = [
-					'key' => $key,
-					'present' => $this->repoGitService->getAnnexContentPath($folderId, $key) !== null,
-				];
-			}
-		}
 
 		return new DataResponse([
-			'history' => $history,
-			'annex' => $annex,
+			'history' => $this->nativeGit->history($folder->id, $path),
+			'annex' => $path !== '' ? $this->nativeGit->annexInfo($folder->id, $path) : null,
 		]);
 	}
 }

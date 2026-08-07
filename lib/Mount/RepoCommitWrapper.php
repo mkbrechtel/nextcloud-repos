@@ -11,7 +11,6 @@ namespace OCA\Repos\Mount;
 use Icewind\Streams\CallbackWrapper;
 use Icewind\Streams\IteratorDirectory;
 use OC\Files\Storage\Wrapper\Wrapper;
-use OCA\Repos\Git\RepoGitService;
 use OCP\Files\Storage\IStorage;
 use OCP\IUser;
 use Psr\Log\LoggerInterface;
@@ -24,16 +23,14 @@ use Psr\Log\LoggerInterface;
 class RepoCommitWrapper extends Wrapper {
 	private readonly int $folderId;
 	private readonly ?IUser $user;
-	private readonly RepoGitService $repoGit;
-	private readonly ?\OCA\Repos\Git\Native\NativeGitService $nativeGit;
+	private readonly \OCA\Repos\Git\Native\NativeGitService $nativeGit;
 	private readonly LoggerInterface $logger;
 
 	public function __construct(array $arguments) {
 		parent::__construct($arguments);
 		$this->folderId = $arguments['folder_id'];
 		$this->user = $arguments['user'];
-		$this->repoGit = $arguments['repo_git'];
-		$this->nativeGit = $arguments['native_git'] ?? null;
+		$this->nativeGit = $arguments['native_git'];
 		$this->logger = $arguments['logger'];
 	}
 
@@ -58,13 +55,9 @@ class RepoCommitWrapper extends Wrapper {
 			$authorName = $this->user?->getDisplayName() ?? 'Nextcloud';
 			$authorEmail = $this->user?->getEMailAddress()
 				?? (($this->user?->getUID() ?? 'nextcloud') . '@nextcloud.invalid');
-			if ($this->nativeGit !== null) {
-				$this->nativeGit->commitFromStorage(
-					$this->folderId, $this->getWrapperStorage(), $paths, $message, $authorName, $authorEmail,
-				);
-			} else {
-				$this->repoGit->commitWorktreePaths($this->folderId, $paths, $message, $authorName, $authorEmail);
-			}
+			$this->nativeGit->commitFromStorage(
+				$this->folderId, $this->getWrapperStorage(), $paths, $message, $authorName, $authorEmail,
+			);
 		} catch (\Exception $e) {
 			$this->logger->error('commit-on-write failed for repo folder ' . $this->folderId, [
 				'app' => 'repos',

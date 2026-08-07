@@ -23,11 +23,12 @@ An internal, deliberately minimal git implementation in PHP — enough for this 
 **Rollout.** Per-repository option `backend=native` (`occ repos:create --native`); existing binary-backed repos keep working unchanged. Once annex interop (below) lands, native becomes the default and the binary backend retires.
 
 ### Phasing
-1. Native vertical slice: init, commit-on-write, clone, push, history — this issue.
-2. git-annex interop: pointer blobs on large writes, annex object serving from Nextcloud storage, and a hand-constructed `git-annex` branch (uuid.log, per-key location logs — documented text formats) so stock clients keep working. Follow-up issue.
+1. Native vertical slice: init, commit-on-write, clone, push, history. **Done.**
+2. Native git-annex interop: pointer blobs on large writes (SHA256E keys and branch hashdirs verified byte-exact against the real binary), annex content in appdata, a hand-constructed `git-annex` branch (uuid.log, per-key location logs), uuid advertisement via the synthesized repo config, content served over the clone URL. **Done** — stock `git annex get` and datalad retrieve content from a native repo (e2e green).
+3. The git shellout layer (`GitCli`, `RepoGitService`, worktrees) is **removed**; native is the only backend. The `git`/`git-annex` binaries remain in the container solely as e2e test clients.
 
-### Acceptance
-A repo created with `--native`: stock `git clone` works, a WebDAV upload appears as an attributed commit on `git pull`, `git push` shows up in the Files app, the History tab works — with the `git` binary removed from the server container for the test.
+### Status
+All repos are native. e2e passes including annex and datalad; the real-repo test pushes and re-clones the pinned git v2.47.3 release tree (4537 files) fsck-clean.
 
 # Considerations
 

@@ -10,32 +10,74 @@ namespace OCA\Repos\Git\Native;
 
 use OCA\Repos\Mount\FolderStorageManager;
 use OCP\Files\Storage\IStorage;
+use OCP\IConfig;
 use Psr\Log\LoggerInterface;
 
 /**
  * Glue between the native git core and the app: commit-on-write from folder
- * storage, materializing pushed commits back into it, history (issue 29).
+ * storage (annexing large files), materializing pushed commits back,
+ * history, and the hand-built git-annex branch (issue 29).
  */
 class NativeGitService {
+	public const ANNEX_BRANCH = 'refs/heads/git-annex';
+	private const DEFAULT_THRESHOLD = 52428800; // 50 MB
+
 	public function __construct(
 		private readonly NativeRepository $repo,
 		private readonly NativeProtocol $protocol,
+		private readonly ObjectStore $objects,
+		private readonly AnnexStore $annexStore,
 		private readonly FolderStorageManager $folderStorageManager,
+		private readonly IConfig $config,
 		private readonly LoggerInterface $logger,
 	) {
 	}
 
-	public static function isNative(array $options): bool {
-		return ($options['backend'] ?? '') === 'native';
-	}
-
 	public function init(int $folderId): void {
 		$this->repo->init($folderId, time());
+		$this->getUuid($folderId); // seeds uuid.log on the git-annex branch
 	}
 
+	// ---- annex identity ----------------------------------------------------
+
+	public function getUuid(int $folderId): string {
+		$uuid = $this->config->getAppValue('repos', 'annex_uuid_' . $folderId, '');
+		if ($uuid === '') {
+			$bytes = random_bytes(16);
+			$bytes[6] = chr((ord($bytes[6]) & 0x0f) | 0x40);
+			$bytes[8] = chr((ord($bytes[8]) & 0x3f) | 0x80);
+			$uuid = vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($bytes), 4));
+			$this->config->setAppValue('repos', 'annex_uuid_' . $folderId, $uuid);
+			$this->repo->commitChangesOnRef(
+				$folderId,
+				self::ANNEX_BRANCH,
+				['uuid.log' => $uuid . ' nextcloud timestamp=' . time() . "s\n"],
+				'update',
+				time(),
+			);
+		}
+		return $uuid;
+	}
+
+	private function threshold(): int {
+		return (int)$this->config->getAppValue('repos', 'annex_threshold', (string)self::DEFAULT_THRESHOLD);
+	}
+
+	private function recordPresent(int $folderId, string $key): void {
+		$uuid = $this->getUuid($folderId);
+		$logPath = AnnexKeys::branchHashDir($key) . '/' . $key . '.log';
+		$this->repo->commitChangesOnRef(
+			$folderId,
+			self::ANNEX_BRANCH,
+			[$logPath => sprintf("%d.%06ds 1 %s\n", time(), 0, $uuid)],
+			'update',
+			time(),
+		);
+	}
+
+	// ---- commit-on-write ---------------------------------------------------
+
 	/**
-	 * Commit paths that changed in the folder storage (commit-on-write).
-	 *
 	 * @param string[] $paths storage-relative paths
 	 */
 	public function commitFromStorage(
@@ -46,7 +88,9 @@ class NativeGitService {
 		string $authorName,
 		string $authorEmail,
 	): void {
+		$threshold = $this->threshold();
 		$changes = [];
+		$annexed = [];
 		foreach ($paths as $path) {
 			if ($storage->file_exists($path)) {
 				if ($storage->is_dir($path)) {
@@ -56,7 +100,14 @@ class NativeGitService {
 				if ($content === false) {
 					continue;
 				}
-				$changes[$path] = $content;
+				if (strlen($content) >= $threshold) {
+					$key = AnnexKeys::keyForContent(basename($path), $content);
+					$this->annexStore->write($folderId, $key, $content);
+					$changes[$path] = AnnexKeys::pointerFor($key);
+					$annexed[] = $key;
+				} else {
+					$changes[$path] = $content;
+				}
 			} else {
 				$changes[$path] = null;
 			}
@@ -65,10 +116,44 @@ class NativeGitService {
 			return;
 		}
 		$this->repo->commitChanges($folderId, $changes, $message, $authorName, $authorEmail, time());
+		foreach ($annexed as $key) {
+			$this->recordPresent($folderId, $key);
+		}
 	}
 
 	public function history(int $folderId, string $path, int $limit = 50): array {
 		return $this->repo->log($folderId, $path, $limit);
+	}
+
+	/**
+	 * @return array{key: string, present: bool}|null annex state of a path at head
+	 */
+	public function annexInfo(int $folderId, string $path): ?array {
+		$content = $this->repo->readPathAtRef($folderId, NativeRepository::HEAD_REF, $path);
+		if ($content === null) {
+			return null;
+		}
+		$key = AnnexKeys::keyFromPointer($content);
+		if ($key === null) {
+			return null;
+		}
+		return ['key' => $key, 'present' => $this->annexStore->has($folderId, $key)];
+	}
+
+	/**
+	 * @return resource|null content stream for an annex key
+	 */
+	public function annexContentStream(int $folderId, string $key) {
+		return $this->annexStore->readStream($folderId, $key);
+	}
+
+	public function annexContentSize(int $folderId, string $key): ?int {
+		return $this->annexStore->size($folderId, $key);
+	}
+
+	public function repoConfigText(int $folderId): string {
+		return "[core]\n\trepositoryformatversion = 0\n\tbare = true\n"
+			. "[annex]\n\tuuid = " . $this->getUuid($folderId) . "\n\tversion = 10\n";
 	}
 
 	// ---- protocol passthrough ---------------------------------------------
@@ -106,6 +191,7 @@ class NativeGitService {
 
 	/**
 	 * Write the new head's tree into the folder storage (after a push).
+	 * Annex pointers materialize as their content when the store has it.
 	 */
 	private function materialize(int $folderId, ?string $oldHead): void {
 		$newHead = $this->repo->head($folderId);
@@ -122,9 +208,17 @@ class NativeGitService {
 			if (($oldTree[$path]['sha'] ?? null) === $entry['sha']) {
 				continue;
 			}
-			$blob = $this->readBlob($folderId, $entry['sha']);
-			if ($blob === null) {
+			$object = $this->objects->read($folderId, $entry['sha']);
+			if ($object === null || $object['type'] !== 'blob') {
 				continue;
+			}
+			$blob = $object['content'];
+			$key = AnnexKeys::keyFromPointer($blob);
+			if ($key !== null) {
+				$stored = $this->annexStore->read($folderId, $key);
+				if ($stored !== null) {
+					$blob = $stored;
+				}
 			}
 			$this->ensureParentDirs($storage, $path);
 			$storage->file_put_contents($path, $blob);
@@ -136,11 +230,6 @@ class NativeGitService {
 		}
 
 		$this->folderStorageManager->scanFolder($folderId);
-	}
-
-	private function readBlob(int $folderId, string $sha): ?string {
-		$object = \OCP\Server::get(ObjectStore::class)->read($folderId, $sha);
-		return ($object !== null && $object['type'] === 'blob') ? $object['content'] : null;
 	}
 
 	private function ensureParentDirs(IStorage $storage, string $path): void {

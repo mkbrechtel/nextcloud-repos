@@ -41,7 +41,7 @@ fi
 ID=$($OCC repos:create "$REPO")
 $OCC repos:group "$ID" admin write >/dev/null
 # test-only: lower the annex threshold so a 300KB file gets annexed
-runuser -u www-data -- git -C "/var/www/html/data/__repos/$ID/repo.git" config annex.largefiles 'largerthan=100kb'
+$OCC config:app:set repos annex_threshold --value=100000 >/dev/null
 pass "repo folder created (id $ID)"
 
 # --- unauthenticated access is refused --------------------------------------
@@ -77,9 +77,9 @@ pass "WebDAV edit became a commit by $USER"
 head -c 300000 /dev/urandom > /tmp/e2e-big.bin
 curl -s -f -u "$USER:$PASS" -X PUT --data-binary @/tmp/e2e-big.bin \
 	"$NC_URL/remote.php/dav/files/$USER/$REPO/big.bin" > /dev/null
-runuser -u www-data -- git -C "/var/www/html/data/__repos/$ID/files" annex lookupkey big.bin > /dev/null \
-	|| fail "large upload was not annexed"
-pass "large upload annexed server-side"
+git fetch -q origin && git -C . show origin/main:big.bin | head -1 | grep -q '^/annex/objects/' \
+	|| fail "large upload was not annexed (no pointer blob in git)"
+pass "large upload annexed (pointer blob in git history)"
 
 # --- git annex get over the clone URL ----------------------------------------
 git pull -q origin main
