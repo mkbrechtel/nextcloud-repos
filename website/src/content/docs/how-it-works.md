@@ -29,7 +29,7 @@ client-side setup:
 - The app serves the repository's `config` over dumb HTTP, so a stock client
   discovers the annex UUID and treats the origin as an annex peer.
 - Annex objects are served at their standard in-repo paths
-  (`…/repos/<name>/annex/objects/…`), streamed straight from the object store.
+  (`…/apps/repos/<name>.git/annex/objects/…`), streamed straight from the object store.
 - Authentication is the same app password the clone already stored in git's
   credential helper.
 

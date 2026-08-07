@@ -45,7 +45,7 @@ runuser -u www-data -- git -C "/var/www/html/data/__repos/$ID/repo.git" config a
 pass "repo folder created (id $ID)"
 
 # --- unauthenticated access is refused --------------------------------------
-CODE=$(curl -s -o /dev/null -w '%{http_code}' "$NC_URL/apps/repos/repos/$REPO/info/refs?service=git-upload-pack")
+CODE=$(curl -s -o /dev/null -w '%{http_code}' "$NC_URL/apps/repos/$REPO.git/info/refs?service=git-upload-pack")
 [ "$CODE" = "401" ] || fail "expected 401 for anonymous, got $CODE"
 pass "anonymous access gets 401 challenge"
 
@@ -99,7 +99,7 @@ if command -v datalad >/dev/null; then
 	# datalad wires its own askpass into git-annex, which can feed empty
 	# credentials and make git erase the shared store on the resulting 401;
 	# embed credentials in the URL for this step (test environment only)
-	datalad clone "http://$USER:$PASS@$NC_HOST/apps/repos/repos/$REPO" /tmp/e2e-datalad >/dev/null 2>&1 \
+	datalad clone "http://$USER:$PASS@$NC_HOST/apps/repos/$REPO.git" /tmp/e2e-datalad >/dev/null 2>&1 \
 		|| fail "datalad clone failed"
 	# Credentials embedded in the URL break git-annex's auth flow (and
 	# datalad's askpass breaks the probe during clone, leaving annex-ignore
