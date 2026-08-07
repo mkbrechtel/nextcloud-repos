@@ -105,6 +105,17 @@ test-all: test  ## Alias for 'test'
 test-e2e:  ## Run the end-to-end acceptance test against the running dev server
 	podman exec "$(CONTAINER_NAME)" bash /var/www/html/custom_apps/repos/tests/e2e.sh
 
+DEMO_TARGET ?= http://127.0.0.1:$(DEV_PORT)
+demo-video:  ## Record the walkthrough video (set DEMO_TARGET/DEMO_PASS for other instances)
+	podman build -t nextcloud-repos:demo-recorder test/demo/
+	mkdir -p test/demo/out
+	podman run --rm --network=host \
+	  -e TARGET_URL="$(DEMO_TARGET)" \
+	  -e DEMO_USER="$${DEMO_USER:-admin}" \
+	  -e DEMO_PASS="$${DEMO_PASS:-admin}" \
+	  -v ./test/demo/out:/out:z \
+	  nextcloud-repos:demo-recorder
+
 test-browser:  ## Run browser tests with Playwright
 	@if ! podman ps --format "{{.Names}}" | grep -q "^$(CONTAINER_NAME)$$"; then \
 	    echo "Error: Development server '$(CONTAINER_NAME)' is not running."; \

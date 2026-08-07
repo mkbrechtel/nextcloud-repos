@@ -1,0 +1,46 @@
+---
+title: Nextcloud Repositories
+description: Git, Git-Annex and Datalad repositories inside Nextcloud — one URL, one credential, one history.
+template: splash
+hero:
+  tagline: Your Nextcloud is now a git remote. And a git-annex remote. And a Datalad sibling. Files people and git people, finally on the same page.
+  actions:
+    - text: Watch the demo
+      link: /demo/
+      icon: rocket
+      variant: primary
+    - text: Get started
+      link: /getting-started/
+      icon: right-arrow
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## One history, two views
+
+<CardGrid stagger>
+	<Card title="Clone your Nextcloud folder" icon="seti:git">
+		Every repository folder is served over Git's smart HTTP protocol at its own URL.
+		`git clone`, `git push` — with your Nextcloud app password.
+	</Card>
+	<Card title="Browser edits become commits" icon="pencil">
+		Save a document in the Files app and it lands in git history, attributed to
+		your Nextcloud user. No sync gap, no import step.
+	</Card>
+	<Card title="Big data via git-annex" icon="seti:db">
+		Large files are annexed automatically. `git annex get` fetches their content
+		over the same clone URL with the same credential.
+	</Card>
+	<Card title="Datalad ready" icon="open-book">
+		`datalad clone` and dataset retrieval work against a stock Nextcloud with
+		this app — built for research data workflows.
+	</Card>
+</CardGrid>
+
+## Why
+
+Research teams live in two worlds: the Files-app world of project managers and
+clinicians, and the git/Datalad world of data engineers. Today they bridge those
+worlds by hand — export, upload, re-import, email. Nextcloud Repositories removes
+the bridge entirely: the folder *is* the working tree of the repository, the
+repository *is* what you clone, and both sides see one attributed history.

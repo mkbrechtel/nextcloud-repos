@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 Mirian Brechtel <brechtel@med.uni-frankfurt.de>
+# SPDX-License-Identifier: AGPL-3.0-or-later
+#
+# Demo video recorder: Debian trixie, apt packages only.
+# Chromium driven by Selenium, a ttyd (xterm.js) web terminal for the git side,
+# Xvfb as the virtual screen, ffmpeg as the screen grabber.
+
+FROM docker.io/debian:trixie
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
+    python3-selenium \
+    xvfb \
+    ffmpeg \
+    ttyd \
+    git \
+    git-annex \
+    curl \
+    ca-certificates \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    procps \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY run.sh demo.py /demo/
+WORKDIR /demo
+
+# TARGET_URL, DEMO_USER, DEMO_PASS configure the instance under test
+ENTRYPOINT ["bash", "/demo/run.sh"]
