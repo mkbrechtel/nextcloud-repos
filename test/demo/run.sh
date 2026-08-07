@@ -16,13 +16,12 @@ SCREEN=:99
 SIZE=1920x1080
 
 # --- git client setup for the terminal scenes --------------------------------
+# Deliberately NO pre-provisioned credential: entering the app password once at
+# clone time is part of the demo — everything afterwards reuses the stored one.
 git config --global user.name "Demo User"
 git config --global user.email demo@example.org
 git config --global credential.helper store
 git config --global color.ui always
-HOST_PART=$(echo "$TARGET_URL" | sed -E 's|^https?://||; s|/.*||')
-PROTO=$(echo "$TARGET_URL" | sed -E 's|^(https?)://.*|\1|')
-printf 'protocol=%s\nhost=%s\nusername=%s\npassword=%s\n' "$PROTO" "$HOST_PART" "$DEMO_USER" "$DEMO_PASS" | git credential approve
 # test targets may be plain http on loopback
 git config --global annex.security.allowed-ip-addresses all
 

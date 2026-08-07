@@ -21,6 +21,8 @@ from selenium.webdriver.support import expected_conditions as EC
 TARGET = os.environ['TARGET_URL'].rstrip('/')
 USER = os.environ.get('DEMO_USER', 'admin')
 PASS = os.environ['DEMO_PASS']
+# the credential typed on camera; defaults to the web password for dev targets
+APP_PASS = os.environ.get('DEMO_APP_PASS', PASS)
 REPO = os.environ.get('REPO', 'demo')
 TERMINAL = 'http://127.0.0.1:7681'
 
@@ -133,14 +135,19 @@ def main():
     title_card(driver, 'A repository folder', 'It looks like any Nextcloud folder…', 3)
     open_repo_folder(driver, linger=6)
 
-    # --- scene: clone in the terminal ---
+    # --- scene: clone in the terminal, authenticating once ---
     title_card(driver, '…but it is a git repository',
-               'Clone it over HTTPS with your Nextcloud app password', 3)
+               'Clone it over HTTPS — authenticate once with an app password', 3)
     open_terminal(driver)
     type_line(driver, 'clear', 0.6)
-    type_line(driver, f'git clone {clone_url}', 10)
+    type_line(driver, f'git clone {clone_url}', 3)
+    # git prompts Username / Password; the password is not echoed on screen
+    type_line(driver, USER, 1.5)
+    type_line(driver, APP_PASS, 10, char_delay=0.02)
     type_line(driver, f'cd {REPO} && ls -lh', 3)
     type_line(driver, 'cat README.md', 3.5)
+    title_card(driver, 'Typed once, stored by git',
+               'Every later fetch, push and annex transfer reuses that credential', 3)
 
     # --- scene: annexed data over the same URL ---
     main_tab(driver)
