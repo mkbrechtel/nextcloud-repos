@@ -127,6 +127,12 @@ class NativeProtocol {
 		$applied = [];
 		$results = [];
 		foreach ($commands as $command) {
+			// the git-annex branch is server-owned bookkeeping: Nextcloud is
+			// the annex store and sole writer of location logs (issue 29)
+			if ($command['ref'] === 'refs/heads/git-annex' || str_ends_with($command['ref'], '/git-annex')) {
+				$results[] = 'ng ' . $command['ref'] . ' the git-annex branch is maintained by the server';
+				continue;
+			}
 			$current = $this->refs->get($folderId, $command['ref']) ?? $zero;
 			if ($current !== $command['old']) {
 				$results[] = 'ng ' . $command['ref'] . ' non-fast-forward';
