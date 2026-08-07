@@ -25,6 +25,7 @@ class RepoCommitWrapper extends Wrapper {
 	private readonly int $folderId;
 	private readonly ?IUser $user;
 	private readonly RepoGitService $repoGit;
+	private readonly ?\OCA\Repos\Git\Native\NativeGitService $nativeGit;
 	private readonly LoggerInterface $logger;
 
 	public function __construct(array $arguments) {
@@ -32,6 +33,7 @@ class RepoCommitWrapper extends Wrapper {
 		$this->folderId = $arguments['folder_id'];
 		$this->user = $arguments['user'];
 		$this->repoGit = $arguments['repo_git'];
+		$this->nativeGit = $arguments['native_git'] ?? null;
 		$this->logger = $arguments['logger'];
 	}
 
@@ -56,7 +58,13 @@ class RepoCommitWrapper extends Wrapper {
 			$authorName = $this->user?->getDisplayName() ?? 'Nextcloud';
 			$authorEmail = $this->user?->getEMailAddress()
 				?? (($this->user?->getUID() ?? 'nextcloud') . '@nextcloud.invalid');
-			$this->repoGit->commitWorktreePaths($this->folderId, $paths, $message, $authorName, $authorEmail);
+			if ($this->nativeGit !== null) {
+				$this->nativeGit->commitFromStorage(
+					$this->folderId, $this->getWrapperStorage(), $paths, $message, $authorName, $authorEmail,
+				);
+			} else {
+				$this->repoGit->commitWorktreePaths($this->folderId, $paths, $message, $authorName, $authorEmail);
+			}
 		} catch (\Exception $e) {
 			$this->logger->error('commit-on-write failed for repo folder ' . $this->folderId, [
 				'app' => 'repos',

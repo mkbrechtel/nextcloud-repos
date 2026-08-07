@@ -43,6 +43,7 @@ class GitRepoController extends Controller {
 		IRequest $request,
 		private readonly RepoManager $repoManager,
 		private readonly RepoGitService $repoGitService,
+		private readonly \OCA\Repos\Git\Native\NativeGitService $nativeGit,
 		private readonly GitCli $git,
 		private readonly FolderStorageManager $folderStorageManager,
 		private readonly IUserSession $userSession,
@@ -130,14 +131,18 @@ class GitRepoController extends Controller {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
 
-		$gitDir = $this->repoGitService->getGitDir($folder->id);
-		try {
-			$refs = $service === 'git-upload-pack'
-				? $this->git->uploadPackAdvertise($gitDir)
-				: $this->git->receivePackAdvertise($gitDir);
-		} catch (GitException $e) {
-			$this->logger->error('git advertise failed', ['app' => 'repos', 'exception' => $e]);
-			return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
+			$refs = $this->nativeGit->advertise($folder->id, $service);
+		} else {
+			$gitDir = $this->repoGitService->getGitDir($folder->id);
+			try {
+				$refs = $service === 'git-upload-pack'
+					? $this->git->uploadPackAdvertise($gitDir)
+					: $this->git->receivePackAdvertise($gitDir);
+			} catch (GitException $e) {
+				$this->logger->error('git advertise failed', ['app' => 'repos', 'exception' => $e]);
+				return new DataResponse(['error' => 'Git command failed'], Http::STATUS_INTERNAL_SERVER_ERROR);
+			}
 		}
 
 		$serviceHeader = '# service=' . $service . "\n";
@@ -162,6 +167,10 @@ class GitRepoController extends Controller {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
 		}
 
+		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
+			return $this->gitResultResponse($this->nativeGit->uploadPack($folder->id, $this->getRequestBody()), 'git-upload-pack');
+		}
+
 		try {
 			$output = $this->git->uploadPack($this->repoGitService->getGitDir($folder->id), $this->getRequestBody());
 		} catch (GitException $e) {
@@ -183,6 +192,10 @@ class GitRepoController extends Controller {
 		$folder = $this->findAuthorizedFolder($repo, $user, true);
 		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
+			return $this->gitResultResponse($this->nativeGit->receivePack($folder->id, $this->getRequestBody()), 'git-receive-pack');
 		}
 
 		try {
@@ -276,6 +289,17 @@ class GitRepoController extends Controller {
 		$folder = $this->findAuthorizedFolder($repo, $user, false);
 		if ($folder === null) {
 			return new DataResponse(['error' => 'Repository not found'], Http::STATUS_NOT_FOUND);
+		}
+
+		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
+			// synthesize the dumb-protocol files the native backend has no disk form for
+			if ($file === 'HEAD') {
+				return new DataDisplayResponse("ref: refs/heads/main\n", Http::STATUS_OK, ['Content-Type' => 'text/plain']);
+			}
+			if ($file === 'config') {
+				return new DataDisplayResponse("[core]\n\trepositoryformatversion = 0\n\tbare = true\n", Http::STATUS_OK, ['Content-Type' => 'text/plain']);
+			}
+			return new DataResponse(['error' => 'Not available on the native backend'], Http::STATUS_NOT_FOUND);
 		}
 
 		// no traversal: resolve within the bare repo only

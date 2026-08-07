@@ -27,7 +27,8 @@ class Create extends Base {
 			->setName('repos:create')
 			->setDescription('Create a new repository')
 			->addArgument('name', InputArgument::REQUIRED, 'Name or mount point of the new repository')
-			->addOption('bucket', null, InputOption::VALUE_REQUIRED, 'Overwrite the bucket used for the new repository');
+			->addOption('bucket', null, InputOption::VALUE_REQUIRED, 'Overwrite the bucket used for the new repository')
+			->addOption('native', null, InputOption::VALUE_NONE, 'Use the native PHP git backend (issue 29): no git binary, objects in appdata, refs in the database');
 		parent::configure();
 	}
 
@@ -52,6 +53,9 @@ class Create extends Base {
 		$options = [];
 		if ($bucket = $input->getOption('bucket')) {
 			$options['bucket'] = $bucket;
+		}
+		if ($input->getOption('native')) {
+			$options['backend'] = 'native';
 		}
 
 		$id = $this->repoManager->createRepo($name, $options);

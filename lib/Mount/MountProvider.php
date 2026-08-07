@@ -256,14 +256,16 @@ class MountProvider implements IMountProvider {
 			]);
 		}
 
-		// commit-on-write: Nextcloud edits on the mounted worktree become
+		// commit-on-write: Nextcloud edits on the mounted folder become
 		// git commits attributed to the acting user (issue 24)
 		if ($type === 'files') {
+			$isNative = \OCA\Repos\Git\Native\NativeGitService::isNative($folder->options);
 			$quotaStorage = new RepoCommitWrapper([
 				'storage' => $quotaStorage,
 				'folder_id' => $folder->id,
 				'user' => $user,
 				'repo_git' => $this->repoGitService,
+				'native_git' => $isNative ? \OCP\Server::get(\OCA\Repos\Git\Native\NativeGitService::class) : null,
 				'logger' => $this->logger,
 			]);
 		}

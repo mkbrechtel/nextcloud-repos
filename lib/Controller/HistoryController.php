@@ -60,6 +60,14 @@ class HistoryController extends Controller {
 		}
 		$folderId = $folder->id;
 
+		if (\OCA\Repos\Git\Native\NativeGitService::isNative($folder->options)) {
+			$native = \OCP\Server::get(\OCA\Repos\Git\Native\NativeGitService::class);
+			return new DataResponse([
+				'history' => $native->history($folderId, $path),
+				'annex' => null,
+			]);
+		}
+
 		$history = $this->repoGitService->getHistory($folderId, $path);
 
 		$annex = null;

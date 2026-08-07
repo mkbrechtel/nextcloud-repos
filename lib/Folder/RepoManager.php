@@ -37,6 +37,7 @@ class RepoManager {
 		private readonly LoggerInterface $logger,
 		private readonly IGroupManager $groupManager,
 		private readonly RepoGitService $repoGitService,
+		private readonly \OCA\Repos\Git\Native\NativeGitService $nativeGitService,
 	) {
 	}
 
@@ -102,8 +103,13 @@ class RepoManager {
 
 		// Initialize storage
 		try {
-			// the git structure must exist first: the worktree is the files directory
-			$this->repoGitService->createRepoStructure($id);
+			if (\OCA\Repos\Git\Native\NativeGitService::isNative($options)) {
+				// native backend: plain folder storage, objects in appdata, refs in DB
+				$this->nativeGitService->init($id);
+			} else {
+				// the git structure must exist first: the worktree is the files directory
+				$this->repoGitService->createRepoStructure($id);
+			}
 
 			['storage_id' => $storageId, 'root_id' => $rootId] = $this->folderStorageManager->initRootAndStorageForFolder($id, true, $options);
 
@@ -136,6 +142,11 @@ class RepoManager {
 
 		if ($result) {
 			$this->repoGitService->deleteRepoStructure($id);
+			try {
+				\OCP\Server::get(\OCA\Repos\Git\Native\RefStore::class)->deleteAll($id);
+			} catch (\Exception $e) {
+				$this->logger->warning('native ref cleanup failed', ['app' => 'repos', 'exception' => $e]);
+			}
 			$this->eventDispatcher->dispatchTyped(
 				new CriticalActionPerformedEvent('The repository with id %d was removed', [$id])
 			);
