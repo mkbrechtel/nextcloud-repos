@@ -37,5 +37,15 @@ return [
 
 		// File history for the Files app sidebar (issue 26)
 		['name' => 'history#fileHistory', 'url' => '/api/history/{folderId}', 'verb' => 'GET'],
+
+		// Short clone URLs: /apps/repos/<name>.git — the conventional form.
+		// Only .git-suffixed names match, so these cannot shadow other routes.
+		['name' => 'git_repo#infoRefs', 'postfix' => 'short', 'url' => '/{repo}/info/refs', 'verb' => 'GET', 'requirements' => ['repo' => '[^/]+\.git']],
+		['name' => 'git_repo#uploadPack', 'postfix' => 'short', 'url' => '/{repo}/git-upload-pack', 'verb' => 'POST', 'requirements' => ['repo' => '[^/]+\.git']],
+		['name' => 'git_repo#receivePack', 'postfix' => 'short', 'url' => '/{repo}/git-receive-pack', 'verb' => 'POST', 'requirements' => ['repo' => '[^/]+\.git']],
+		['name' => 'git_repo#getHead', 'postfix' => 'short', 'url' => '/{repo}/HEAD', 'verb' => 'GET', 'requirements' => ['repo' => '[^/]+\.git']],
+		['name' => 'git_repo#getConfig', 'postfix' => 'short', 'url' => '/{repo}/config', 'verb' => 'GET', 'requirements' => ['repo' => '[^/]+\.git']],
+		['name' => 'git_repo#getObject', 'postfix' => 'short', 'url' => '/{repo}/objects/{path}', 'verb' => 'GET', 'requirements' => ['repo' => '[^/]+\.git', 'path' => '.+']],
+		['name' => 'git_repo#annexObject', 'postfix' => 'short', 'url' => '/{repo}/annex/objects/{path}', 'verb' => 'GET', 'requirements' => ['repo' => '[^/]+\.git', 'path' => '.+']],
 	],
 ];

@@ -29,7 +29,7 @@ A live demo instance runs at
 [nextcloud-repos-demo.devio.mkbrechtel.dev](https://nextcloud-repos-demo.devio.mkbrechtel.dev).
 
 ```bash
-git clone https://nextcloud-repos-demo.devio.mkbrechtel.dev/apps/repos/repos/demo
+git clone https://nextcloud-repos-demo.devio.mkbrechtel.dev/apps/repos/demo.git
 cd demo
 git annex get .
 ```

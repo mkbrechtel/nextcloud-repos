@@ -40,6 +40,10 @@ def make_driver():
     options.add_argument('--kiosk')
     options.add_argument('--hide-scrollbars')
     options.add_argument('--force-device-scale-factor=1')
+    # no "Chrome is being controlled…" infobar; the title cards carry the
+    # automated-demo disclosure instead
+    options.add_experimental_option('excludeSwitches', ['enable-automation'])
+    options.add_experimental_option('useAutomationExtension', False)
     service = ChromiumService(executable_path='/usr/bin/chromedriver')
     return webdriver.Chrome(options=options, service=service)
 
@@ -47,13 +51,32 @@ def title_card(driver, title, subtitle='', seconds=3.5):
     if MAIN_TAB is not None and driver.current_window_handle != MAIN_TAB:
         driver.switch_to.window(MAIN_TAB)
     html = f'''<!doctype html><html><head><meta charset="utf-8"><style>
+      * {{ box-sizing:border-box; }}
       body {{ margin:0; height:100vh; display:flex; flex-direction:column;
              align-items:center; justify-content:center; text-align:center;
-             background: linear-gradient(135deg,#0f172a 0%,#1e3a8a 100%);
+             background:
+               radial-gradient(1200px 600px at 80% -10%, rgba(59,130,246,.35), transparent 60%),
+               radial-gradient(900px 500px at 10% 110%, rgba(14,165,233,.25), transparent 60%),
+               linear-gradient(150deg,#0b1220 0%,#0f2249 55%,#123a7a 100%);
              color:#f8fafc; font-family:'Liberation Sans',sans-serif; }}
-      h1 {{ font-size:64px; margin:0 0 24px; max-width:70vw; }}
-      p  {{ font-size:30px; color:#93c5fd; margin:0; max-width:60vw; }}
-    </style></head><body><h1>{title}</h1><p>{subtitle}</p></body></html>'''
+      .badge {{ position:absolute; top:44px; left:50%; transform:translateX(-50%);
+             font-size:17px; letter-spacing:.22em; text-transform:uppercase;
+             color:#7dd3fc; border:1px solid rgba(125,211,252,.45);
+             border-radius:999px; padding:10px 26px; background:rgba(8,20,45,.5); }}
+      .badge::before {{ content:'●'; color:#f87171; margin-right:12px; }}
+      h1 {{ font-size:68px; margin:0 0 10px; max-width:76vw; font-weight:700;
+             letter-spacing:-0.01em; }}
+      .rule {{ width:120px; height:4px; border-radius:2px; margin:18px 0 26px;
+             background:linear-gradient(90deg,#38bdf8,#818cf8); }}
+      p  {{ font-size:30px; color:#a5c8f5; margin:0; max-width:62vw; line-height:1.45; }}
+      .foot {{ position:absolute; bottom:40px; left:50%; transform:translateX(-50%);
+             font-size:19px; color:#5b7db1; }}
+      .foot b {{ color:#8fb4e8; font-weight:600; }}
+    </style></head><body>
+      <div class="badge">Automated demo &mdash; recorded unattended</div>
+      <h1>{title}</h1><div class="rule"></div><p>{subtitle}</p>
+      <div class="foot"><b>Nextcloud Repositories</b> &nbsp;&middot;&nbsp; scripted with Selenium, played against a live instance</div>
+    </body></html>'''
     driver.get('data:text/html;charset=utf-8,' + quote(html))
     time.sleep(seconds)
 
@@ -121,7 +144,7 @@ def main():
     global MAIN_TAB
     driver = make_driver()
     MAIN_TAB = driver.current_window_handle
-    clone_url = f'{TARGET}/apps/repos/repos/{REPO}'
+    clone_url = f'{TARGET}/apps/repos/{REPO}.git'
 
     # --- opening ---
     title_card(driver, 'Nextcloud Repositories',
@@ -169,14 +192,15 @@ def main():
     open_repo_folder(driver, linger=6)
 
     # --- scene: file history in the sidebar (best effort) ---
+    # show the file we just pushed: its fresh, attributed commit is the point
     def history_scene():
         driver.execute_script(
-            f"OCA.Files.Sidebar.open('/{REPO}/notes.txt')")
+            f"OCA.Files.Sidebar.open('/{REPO}/from-git.txt')")
         time.sleep(3)
         tab = driver.find_element(
             By.XPATH, "//*[self::a or self::button][contains(., 'History')]")
         tab.click()
-        time.sleep(6)
+        time.sleep(7)
     soft(history_scene, 'history sidebar')
 
     # --- scene: browser edits become commits (best effort) ---

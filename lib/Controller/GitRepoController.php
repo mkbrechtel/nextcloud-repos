@@ -98,6 +98,10 @@ class GitRepoController extends Controller {
 	 * user may access with the needed permission.
 	 */
 	private function findAuthorizedFolder(string $repo, IUser $user, bool $write): ?FolderDefinitionWithPermissions {
+		// support the conventional .git suffix on clone URLs
+		if (str_ends_with($repo, '.git')) {
+			$repo = substr($repo, 0, -4);
+		}
 		$needed = $write ? Constants::PERMISSION_UPDATE : Constants::PERMISSION_READ;
 		foreach ($this->repoManager->getFoldersForUser($user) as $folder) {
 			if ($folder->mountPoint === $repo || (string)$folder->id === $repo) {

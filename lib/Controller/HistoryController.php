@@ -45,6 +45,9 @@ class HistoryController extends Controller {
 		if (str_contains($path, '..')) {
 			return new DataResponse(['error' => 'Invalid path'], Http::STATUS_BAD_REQUEST);
 		}
+		if (str_ends_with($folderId, '.git')) {
+			$folderId = substr($folderId, 0, -4);
+		}
 		$folder = null;
 		foreach ($this->repoManager->getFoldersForUser($user) as $candidate) {
 			if ((string)$candidate->id === $folderId || $candidate->mountPoint === $folderId) {

@@ -51,7 +51,7 @@ pass "anonymous access gets 401 challenge"
 
 # --- clone over Nextcloud HTTP -----------------------------------------------
 rm -rf "$CLONE"
-git clone -q "$NC_URL/apps/repos/repos/$REPO" "$CLONE"
+git clone -q "$NC_URL/apps/repos/$REPO.git" "$CLONE"
 cd "$CLONE"
 git log --oneline | grep -q "Initialize repository" || fail "seed commit missing in clone"
 pass "clone over Nextcloud HTTP"
@@ -106,7 +106,7 @@ if command -v datalad >/dev/null; then
 	# set). Switch to the clean URL + stored credential, which is the
 	# documented client setup anyway; datalad-native credentials are
 	# follow-up work (issue 27).
-	git -C /tmp/e2e-datalad remote set-url origin "$NC_URL/apps/repos/repos/$REPO"
+	git -C /tmp/e2e-datalad remote set-url origin "$NC_URL/apps/repos/$REPO.git"
 	git -C /tmp/e2e-datalad config --unset-all remote.origin.annex-ignore >/dev/null 2>&1 || true
 	printf "protocol=http\nhost=$NC_HOST\nusername=%s\npassword=%s\n" "$USER" "$PASS" | git credential approve
 	(cd /tmp/e2e-datalad && git annex get big.bin >/dev/null 2>&1) || fail "annex get in datalad dataset failed"
