@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Mirian Brechtel <brechtel@med.uni-frankfurt.de>
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { defineCollection } from 'astro:content';
 import { docsLoader } from '@astrojs/starlight/loaders';
 import { docsSchema } from '@astrojs/starlight/schema';
