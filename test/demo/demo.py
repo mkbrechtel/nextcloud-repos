@@ -42,6 +42,8 @@ def make_driver():
     return webdriver.Chrome(options=options, service=service)
 
 def title_card(driver, title, subtitle='', seconds=3.5):
+    if MAIN_TAB is not None and driver.current_window_handle != MAIN_TAB:
+        driver.switch_to.window(MAIN_TAB)
     html = f'''<!doctype html><html><head><meta charset="utf-8"><style>
       body {{ margin:0; height:100vh; display:flex; flex-direction:column;
              align-items:center; justify-content:center; text-align:center;
@@ -62,11 +64,26 @@ def type_line(driver, text, wait_after=2.0, char_delay=0.045):
     element.send_keys(Keys.ENTER)
     time.sleep(wait_after)
 
+MAIN_TAB = None
+TERM_TAB = None
+
 def open_terminal(driver):
-    driver.get(TERMINAL)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
-    time.sleep(1.5)
+    """Switch to the persistent terminal tab (one PTY for the whole demo)."""
+    global TERM_TAB
+    if TERM_TAB is None:
+        driver.switch_to.new_window('tab')
+        TERM_TAB = driver.current_window_handle
+        driver.get(TERMINAL)
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+        time.sleep(1.5)
+    else:
+        driver.switch_to.window(TERM_TAB)
+        time.sleep(0.8)
     driver.find_element(By.TAG_NAME, 'body').click()
+    time.sleep(0.5)
+
+def main_tab(driver):
+    driver.switch_to.window(MAIN_TAB)
     time.sleep(0.5)
 
 def nextcloud_login(driver):
@@ -82,6 +99,9 @@ def nextcloud_login(driver):
     time.sleep(2)
 
 def open_repo_folder(driver, linger=5.0):
+    if MAIN_TAB is not None and driver.current_window_handle != MAIN_TAB:
+        driver.switch_to.window(MAIN_TAB)
+        time.sleep(0.5)
     driver.get(f'{TARGET}/index.php/apps/files/?dir=/{REPO}')
     WebDriverWait(driver, 30).until(
         EC.presence_of_element_located((By.CSS_SELECTOR, '[data-cy-files-list-row-name]')))
@@ -96,7 +116,9 @@ def soft(fn, name):
         traceback.print_exc()
 
 def main():
+    global MAIN_TAB
     driver = make_driver()
+    MAIN_TAB = driver.current_window_handle
     clone_url = f'{TARGET}/index.php/apps/repos/repos/{REPO}'
 
     # --- opening ---
@@ -115,12 +137,13 @@ def main():
     title_card(driver, '…but it is a git repository',
                'Clone it over HTTPS with your Nextcloud app password', 3)
     open_terminal(driver)
-    type_line(driver, 'clear', 1)
+    type_line(driver, 'clear', 0.6)
     type_line(driver, f'git clone {clone_url}', 10)
     type_line(driver, f'cd {REPO} && ls -lh', 3)
     type_line(driver, 'cat README.md', 3.5)
 
     # --- scene: annexed data over the same URL ---
+    main_tab(driver)
     title_card(driver, 'Big data stays lean',
                'Large files are git-annex pointers — fetch content on demand', 3)
     open_terminal(driver)
@@ -130,9 +153,10 @@ def main():
     type_line(driver, 'ls -lh data.bin   # real content, same URL, same credential', 4)
 
     # --- scene: push and see it in the Files app ---
+    main_tab(driver)
     title_card(driver, 'Push like any remote', '…and watch the Files app follow', 3)
     open_terminal(driver)
-    type_line(driver, 'echo "pushed from a terminal" > from-git.txt', 1.5)
+    type_line(driver, 'date > from-git.txt   # something new to push', 1.5)
     type_line(driver, 'git add from-git.txt && git commit -m "Add from-git.txt"', 3)
     type_line(driver, 'git push origin main', 6)
     open_repo_folder(driver, linger=6)

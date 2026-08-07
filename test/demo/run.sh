@@ -33,6 +33,7 @@ export DISPLAY="$SCREEN"
 sleep 1
 
 # --- web terminal (xterm.js served by the aiohttp PTY bridge) -----------------
+mkdir -p /work
 python3 /demo/term_server.py &
 TTYD_PID=$!
 sleep 1

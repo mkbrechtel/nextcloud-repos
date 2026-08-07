@@ -15,7 +15,7 @@ import termios
 
 from aiohttp import web, WSMsgType
 
-COLS, ROWS = 152, 39
+COLS, ROWS = 136, 36
 
 PAGE = f"""<!doctype html>
 <html><head><meta charset="utf-8">
@@ -28,7 +28,7 @@ PAGE = f"""<!doctype html>
 <body><div id="term"></div>
 <script>
   const term = new Terminal({{
-    cols: {COLS}, rows: {ROWS}, fontSize: 22, cursorBlink: true,
+    cols: {COLS}, rows: {ROWS}, fontSize: 20, cursorBlink: true,
     fontFamily: 'monospace',
     theme: {{ background: '#1e1e2e', foreground: '#cdd6f4' }},
   }});
@@ -53,7 +53,9 @@ async def ws_handler(request):
     pid, fd = pty.fork()
     if pid == 0:
         os.environ['TERM'] = 'xterm-256color'
-        os.execvp('bash', ['bash', '-l'])
+        os.environ['PS1'] = r'\[\e[1;34m\]demo\[\e[0m\]:\[\e[1;36m\]\w\[\e[0m\]$ '
+        os.chdir('/work')
+        os.execvp('bash', ['bash', '--norc', '-i'])
 
     winsize = struct.pack('HHHH', ROWS, COLS, 0, 0)
     fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
