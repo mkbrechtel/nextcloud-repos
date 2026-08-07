@@ -35,6 +35,9 @@ The instance serves its files, presents the annex, and passively relays annex st
 
 # Considerations
 
+## Why the server never union-merges client annex state
+Merging is a client duty in git-annex's own design for dumb remotes: `git annex sync` fetches, union-merges locally, and pushes fast-forwards to `synced/git-annex`, so all clients converge without any server logic. Keeping the server out of it preserves provenance — `refs/heads/git-annex` contains only claims the server verified by storing the bytes, so client gossip can never masquerade as store knowledge (a malicious client cannot inject "the server holds key X"). It also keeps the one piece of interpretive annex semantics (union merge, with its edge cases and growth behavior) out of the server entirely. The cost is that the server's own UI only knows its own holdings; if global whereabouts are ever wanted in the sidebar, read `synced/git-annex` passively at presentation time and label it as client-reported — no merge required.
+
 ## Pointer files stay
 Annexed files are represented in git history as small pointer blobs in both backends — that is git-annex's own design and what clients require. The native backend changes where object bytes live and how they are produced, not the annex data model.
 
