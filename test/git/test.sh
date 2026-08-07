@@ -62,6 +62,9 @@ git fetch -q nextcloud
 git reset -q --soft nextcloud/main
 git add -A
 git commit -qm "Import git $GIT_TAG release tree"
+# git archive honors export-ignore, so the import may differ from the
+# upstream checkout by a few files; the imported commit is the reference
+FILE_COUNT=$(git ls-files | wc -l)
 time git push -q nextcloud main
 pass "release tree pushed ($FILE_COUNT files in one commit)"
 
