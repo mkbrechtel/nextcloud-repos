@@ -31,6 +31,9 @@ XVFB_PID=$!
 export DISPLAY="$SCREEN"
 sleep 1
 
+# hide the idle mouse pointer from the recording
+unclutter --timeout 1 --start-hidden &
+
 # --- web terminal (xterm.js served by the aiohttp PTY bridge) -----------------
 mkdir -p /work
 python3 /demo/term_server.py &

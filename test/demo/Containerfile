@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-aiohttp \
     libjs-xterm \
     xvfb \
+    unclutter-xfixes \
     ffmpeg \
     git \
     git-annex \
