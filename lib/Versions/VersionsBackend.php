@@ -53,7 +53,10 @@ class VersionsBackend implements IVersionBackend, IMetadataVersionBackend, IDele
 	}
 
 	public function useBackendForStorage(IStorage $storage): bool {
-		return true;
+		// git is the version history for repo folders; this backend's DB
+		// tables were removed in refactoring. Never volunteer for any
+		// storage — stale registrations must not route writes here.
+		return false;
 	}
 
 	private function getFolderForFile(FileInfo $file): FolderDefinition {

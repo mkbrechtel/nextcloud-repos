@@ -106,38 +106,72 @@ class Pack {
 			}
 			$offset += inflate_get_read_len($ctx);
 
-			if ($type === self::OBJ_OFS_DELTA || $type === self::OBJ_REF_DELTA) {
-				if ($baseOffset !== null) {
-					$base = $byOffset[$baseOffset] ?? null;
-					if ($base === null) {
-						throw new \RuntimeException('ofs-delta base not found in pack');
-					}
-					$baseType = $base['type'];
-					$baseContent = $base['content'];
-				} else {
-					$base = $baseLookup($baseSha);
-					if ($base === null) {
-						throw new \RuntimeException('ref-delta base ' . $baseSha . ' not found');
-					}
-					$baseType = array_flip(Objects::TYPE_NAMES)[$base['type']];
-					$baseContent = $base['content'];
-				}
-				$content = self::applyDelta($baseContent, $content);
-				$type = $baseType;
-			}
-
-			$byOffset[$entryOffset] = ['type' => $type, 'content' => $content];
-			$typeName = Objects::TYPE_NAMES[$type] ?? null;
-			if ($typeName === null) {
-				throw new \RuntimeException('Unknown object type ' . $type . ' in pack');
-			}
-			$objects[] = [
-				'type' => $typeName,
+			$byOffset[$entryOffset] = [
+				'type' => $type,
 				'content' => $content,
-				'sha' => Objects::hash($typeName, $content),
+				'baseOffset' => $baseOffset,
+				'baseSha' => $baseSha,
 			];
 		}
-		return $objects;
+
+		// resolve deltas to a fixpoint: ref-delta bases may appear anywhere
+		// in the pack (including after the delta) or outside it entirely
+		$bySha = [];
+		$resolvedList = [];
+		$pending = $byOffset;
+		while ($pending !== []) {
+			$progress = false;
+			foreach ($pending as $entryOffset => $entry) {
+				$baseType = null;
+				$baseContent = null;
+				if ($entry['baseOffset'] === null && $entry['baseSha'] === null) {
+					$baseType = $entry['type'];
+					$baseContent = null; // not a delta
+				} elseif ($entry['baseOffset'] !== null) {
+					$base = $byOffset[$entry['baseOffset']] ?? null;
+					if ($base === null) {
+						throw new \RuntimeException('ofs-delta base offset not found in pack');
+					}
+					if (isset($base['resolvedType'])) {
+						$baseType = $base['resolvedType'];
+						$baseContent = $base['resolvedContent'];
+					}
+				} else {
+					if (isset($bySha[$entry['baseSha']])) {
+						$baseType = $bySha[$entry['baseSha']]['type'];
+						$baseContent = $bySha[$entry['baseSha']]['content'];
+					} else {
+						$external = $baseLookup($entry['baseSha']);
+						if ($external !== null) {
+							$baseType = array_flip(Objects::TYPE_NAMES)[$external['type']];
+							$baseContent = $external['content'];
+						}
+					}
+				}
+				if ($baseType === null && ($entry['baseOffset'] !== null || $entry['baseSha'] !== null)) {
+					continue; // base not resolved yet, try next round
+				}
+
+				$content = $baseContent === null
+					? $entry['content']
+					: self::applyDelta($baseContent, $entry['content']);
+				$typeName = Objects::TYPE_NAMES[$baseType] ?? null;
+				if ($typeName === null) {
+					throw new \RuntimeException('Unknown object type ' . $baseType . ' in pack');
+				}
+				$sha = Objects::hash($typeName, $content);
+				$byOffset[$entryOffset]['resolvedType'] = $baseType;
+				$byOffset[$entryOffset]['resolvedContent'] = $content;
+				$bySha[$sha] = ['type' => $baseType, 'content' => $content];
+				$resolvedList[] = ['type' => $typeName, 'content' => $content, 'sha' => $sha];
+				unset($pending[$entryOffset]);
+				$progress = true;
+			}
+			if (!$progress) {
+				throw new \RuntimeException('Unresolvable delta bases in pack (' . count($pending) . ' left)');
+			}
+		}
+		return $resolvedList;
 	}
 
 	private static function applyDelta(string $base, string $delta): string {
